@@ -7,6 +7,7 @@
 `define ReadEnable           1'b1                        //使能读
 `define ReadDisable          1'b0                        //禁止读
 `define AluOpBus             7:0                         //译码阶段的输出aluop_o的宽度  
+`define AluSelBus            2:0                         //译码阶段的输出alusel_o的宽度  
 `define InstValid            1'b0                        //指令有效
 `define InstInvalid          1'b1                        //指令无效
 `define True_v               1'b1                        //逻辑真
