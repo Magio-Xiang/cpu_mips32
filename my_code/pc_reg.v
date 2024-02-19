@@ -20,7 +20,7 @@ module pc_reg (
     always@(posedge clk)begin
         if(ce == `ChipDisable)
         begin
-            pc<=32'h00000000;
+            pc<=`ZeroWord;
         end
         else
         begin
