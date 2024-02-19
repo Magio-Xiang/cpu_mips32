@@ -35,7 +35,7 @@ always @(*) begin
         alusel_o <= `EXE_RES_NOP;
         wd_o <= `NOPRegAddr;
         wreg_o <= `WriteDisable;
-        instvalid <=`InstInvalid;
+        instvalid <=`InstValid;
         reg1_addr_o <= `NOPRegAddr;
         reg2_addr_o <= `NOPRegAddr;
         reg1_read_o <= 1'b0;
@@ -45,14 +45,54 @@ always @(*) begin
     else begin
         aluop_o <= `EXE_NOP_OP;
         alusel_o <= `EXE_RES_NOP;
-        wd_o <= inst_i[20:16];
+        wd_o <= inst_i[15:11];
         wreg_o <= `WriteDisable;
         instvalid <=`InstInvalid;
-        reg1_addr_o <= `NOPRegAddr;
-        reg2_addr_o <= `NOPRegAddr;
+        reg1_addr_o <= inst_i[25:21];
+        reg2_addr_o <= inst_i[20:16];
         reg1_read_o <= 1'b0;
         reg2_read_o <= 1'b0;
         imm <= 32'h0;
+
+        case (op)
+            `EXE_ORI: begin
+                wreg_o <= `WriteEnable;
+                aluop_o<= `EXE_OR_OP;
+                alusel_o<=`EXE_RES_LOGIC;
+                reg1_read_o<=1'b1;
+                reg2_read_o<=1'b0;
+                imm<={16'h0,inst_i[15:0]};
+                wd_o<=inst_i[20:16];
+                instvalid<=`InstValid;
+            end
+            default:begin
+                
+            end 
+        endcase
+    end
+end
+
+always @(*) begin
+    if(rst==`RstEnable) begin
+        reg1_o<=`ZeroWord;
+    end else if (reg1_read_o==1'b1) begin
+        reg1_o<=reg1_data_i;
+    end else if (reg1_read_o ==1'b0) begin
+        reg1_o<=imm;
+    end else begin
+        reg1_o<=`ZeroWord;
+    end
+end
+
+always @(*) begin
+    if(rst==`RstEnable) begin
+        reg2_o<=`ZeroWord;
+    end else if (reg2_read_o==1'b1) begin
+        reg2_o<=reg2_data_i;
+    end else if (reg2_read_o ==1'b0) begin
+        reg2_o<=imm;
+    end else begin
+        reg2_o<=`ZeroWord;
     end
 end
 
