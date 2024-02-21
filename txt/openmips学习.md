@@ -203,3 +203,6 @@
         - 工具链命令：mips-linux-gnu- 
         - 流程：inst_rom.s编译->inst_rom.o链接ram.ld->inst_rom.om格式转化->inst_rom.bin转化格式->inst_rom.data 
         - Makefile：集成脚本 命令：make all
+
+
+## Chapter5 逻辑、移位操作与空指令的实现
