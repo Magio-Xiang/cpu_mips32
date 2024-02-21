@@ -78,6 +78,13 @@ id u_id(
     .inst_i      ( id_inst_i      ),
     .reg1_data_i ( reg1_data ),
     .reg2_data_i ( reg2_data ),
+    .mem_wdata_i ( mem_wdata_o ),
+    .mem_wd_i    ( mem_wd_o    ),
+    .mem_wreg_i  ( mem_wreg_o  ),
+    .ex_wdata_i  ( ex_wdata_o  ),
+    .ex_wd_i     ( ex_wd_o     ),
+    .ex_wreg_i   ( ex_wreg_o   ),
+
     .reg1_read_o ( reg1_read ),
     .reg2_read_o ( reg2_read ),
     .reg1_addr_o ( reg1_addr ),
