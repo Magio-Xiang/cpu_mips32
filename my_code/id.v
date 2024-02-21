@@ -8,6 +8,14 @@ module id (
     input wire[`RegBus] reg1_data_i,
     input wire[`RegBus] reg2_data_i,
 
+    input wire[`RegBus] mem_wdata_i,
+    input wire[`RegAddrBus] mem_wd_i,
+    input wire mem_wreg_i,
+    
+    input wire[`RegBus] ex_wdata_i,
+    input wire[`RegAddrBus] ex_wd_i,
+    input wire ex_wreg_i,
+
     output reg reg1_read_o,
     output reg reg2_read_o,
     output reg[`RegAddrBus] reg1_addr_o,
@@ -75,6 +83,10 @@ end
 always @(*) begin
     if(rst==`RstEnable) begin
         reg1_o<=`ZeroWord;
+    end else if ((reg1_read_o==`ReadEnable)&&(ex_wreg_i==`WriteEnable)&&(reg1_addr_o==ex_wd_i)) begin
+        reg1_o<=ex_wdata_i;
+    end else if ((reg1_read_o==`ReadEnable)&&(mem_wreg_i==`WriteEnable)&&(reg1_addr_o==mem_wd_i)) begin
+        reg1_o<=mem_wdata_i;
     end else if (reg1_read_o==1'b1) begin
         reg1_o<=reg1_data_i;
     end else if (reg1_read_o ==1'b0) begin
@@ -87,7 +99,11 @@ end
 always @(*) begin
     if(rst==`RstEnable) begin
         reg2_o<=`ZeroWord;
-    end else if (reg2_read_o==1'b1) begin
+    end else if ((reg2_read_o==`ReadEnable)&&(ex_wreg_i==`WriteEnable)&&(reg2_addr_o==ex_wd_i)) begin
+        reg2_o<=ex_wdata_i;
+    end else if ((reg2_read_o==`ReadEnable)&&(mem_wreg_i==`WriteEnable)&&(reg2_addr_o==mem_wd_i)) begin
+        reg2_o<=mem_wdata_i;
+    end  else if (reg2_read_o==1'b1) begin
         reg2_o<=reg2_data_i;
     end else if (reg2_read_o ==1'b0) begin
         reg2_o<=imm;
