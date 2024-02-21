@@ -191,3 +191,15 @@
     | wb_wd       | 5           |输出           |回写阶段的指令要写入的目的寄存器地址              | 
     | wb_wreg     |1            |输出           |回写阶段的指令是否写入目的寄存器       | 
     - 时钟缓冲作用 
+
+- MIPS编译环境建立 
+    - 使用MIPS32架构下已有的GNU工具链 
+    - 虚拟机安装： 
+        - VisualBox：最新版本即可 
+        - Ubuntu：使用22.04desktop版本 
+        - 共享文件夹设置 
+    - GNU工具链安装： 
+        - 参考链接：https://blog.csdn.net/qq_38305370/article/details/114676603
+        - 工具链命令：mips-linux-gnu- 
+        - 流程：inst_rom.s编译->inst_rom.o链接ram.ld->inst_rom.om格式转化->inst_rom.bin转化格式->inst_rom.data 
+        - Makefile：集成脚本 命令：make all
