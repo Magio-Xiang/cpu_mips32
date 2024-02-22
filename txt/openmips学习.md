@@ -1,8 +1,5 @@
 # OpenMIPS学习笔记
 
-## OpenMIPS指令及机器码 
-![OpenMIPS指令及机器码](/pic/OpenMPIS_INST.jpg "OpenMIPS指令及机器码")
-
 ## Chapter3  
 - 五级流水线：取指、译码、执行、访存、回写  
 - 指令的5个阶段  
@@ -237,5 +234,24 @@
         - 修改后的ID模块接口说明已在上文中更改 
 
 - 逻辑、移位操作与空指令 
-    - 逻辑操作： and,andi,or,ori,xor,xori,nor,lui(load upper immediate,rt<-immediate||0^16>) 
-    - 移位指令：
+    - 逻辑操作（B1）： and,andi,or,ori,xor,xori,nor,lui(load upper immediate,rt<-immediate||0^16)  
+        - 含有字母i的表示源操作数2为立即数，否则源操作数都来自寄存器数据 
+    - 移位指令（B2）： sll,sllv,sra,srav,srl,srlv 
+        - 第一个字母s表示移位 
+        - 第二个字母表示移位方向 
+        - 第三个字母表示移位方式：逻辑移位（l）或算术移位（a） 
+        - 第四个字母表示移位位数确定方式：v表示由rs[4:0]确定移位位数，否则由5bit数据sa确定移位位数 
+    - 空指令与其他指令（B9）：nop,ssnop,sync,pref 
+        - nop,ssnop:空指令，其中ssnop为一种特殊空指令，在每个周期发射多条指令的CPU中，确保单独占用一个发射周期。在OpenMIPS中与nop处理方式相同 
+        - sync：保证加载、存储的顺序，在OpenMIPS中当作空指令处理 
+        - pref：缓存预取，OpenMIPS无缓存，当作空指令处理  
+    - 指令冲突： 
+    > nop   =  sll $0,$0,0 
+    > 
+    > ssnop =  sll $0,$0,1 
+        - 实际不影响，$0始终为0，所以nop、ssnop不用特殊处理，当成sll处理即可
+
+
+
+## OpenMIPS指令及机器码 
+![OpenMIPS指令及机器码](/pic/OpenMPIS_INST.jpg "OpenMIPS指令及机器码") 
