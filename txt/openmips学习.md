@@ -246,9 +246,8 @@
         - sync：保证加载、存储的顺序，在OpenMIPS中当作空指令处理 
         - pref：缓存预取，OpenMIPS无缓存，当作空指令处理  
     - 指令冲突： 
-        > nop   =  sll $0,$0,0 
-        >
-        > ssnop =  sll $0,$0,1 
+        - nop   =  sll $0,$0,0 
+        - ssnop =  sll $0,$0,1 
         - 实际不影响，$0始终为0，所以nop、ssnop不用特殊处理，当成sll处理即可
 
 
