@@ -108,7 +108,7 @@ always @(*) begin
                                 instvalid<=`InstValid;
                             end
                             `EXE_SRLV:begin
-                                aluop_o<=`EXE_SRLV_OP;
+                                aluop_o<=`EXE_SRL_OP;
                                 alusel_o<=`EXE_RES_SHIFT;
                                 reg1_read_o<=`ReadEnable;
                                 reg2_read_o<=`ReadEnable;
@@ -116,7 +116,7 @@ always @(*) begin
                                 instvalid<=`InstValid;
                             end
                             `EXE_SRAV:begin
-                                aluop_o<=`EXE_SRAV_OP;
+                                aluop_o<=`EXE_SRA_OP;
                                 alusel_o<=`EXE_RES_SHIFT;
                                 reg1_read_o<=`ReadEnable;
                                 reg2_read_o<=`ReadEnable;
@@ -152,7 +152,7 @@ always @(*) begin
             end
             `EXE_ANDI:begin
                 wreg_o <= `WriteEnable;
-                aluop_o<= `EXE_ANDI_OP;
+                aluop_o<= `EXE_AND_OP;
                 alusel_o<=`EXE_RES_LOGIC;
                 reg1_read_o<=1'b1;
                 reg2_read_o<=1'b0;
