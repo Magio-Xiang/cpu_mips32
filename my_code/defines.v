@@ -37,7 +37,7 @@
 `define EXE_LUI              6'b001111                        //指令lui的指令码
 
 `define EXE_SLL              6'b000000                        //指令sll的指令码
-`define EXE_SLLV             6'b001000                        //指令srl的指令码
+`define EXE_SLLV             6'b000100                        //指令sllv的指令码
 `define EXE_SRL              6'b000010                        //指令srl的指令码
 `define EXE_SRLV             6'b000110                        //指令srlv的指令码
 `define EXE_SRA              6'b000011                        //指令sra的指令码
