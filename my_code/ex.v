@@ -9,12 +9,68 @@ module ex (
     input wire[`RegAddrBus] wd_i,
     input wire wreg_i,
 
+    input wire[`RegBus] hi_i,
+    input wire[`RegBus] lo_i,
+    input wire mem_whilo_i,
+    input wire[`RegBus] mem_hi_i,
+    input wire[`RegBus] mem_lo_i,
+    input wire wb_whilo_i,
+    input wire[`RegBus] wb_hi_i,
+    input wire[`RegBus] wb_lo_i,
+
+    output reg whilo_o,
+    output reg[`RegBus] hi_o,
+    output reg[`RegBus] lo_o,
+
     output reg[`RegAddrBus] wd_o,
     output reg wreg_o,
     output reg[`RegBus] wdata_o
 );
     reg[`RegBus] logicout;
     reg[`RegBus] shiftres;
+    reg[`RegBus] moveres;
+    reg[`RegBus] HI;
+    reg[`RegBus] LO;
+
+    always @(*) begin
+        if (rst==`RstEnable) begin
+            HI<=`ZeroWord;
+            LO<=`ZeroWord;
+        end else if (mem_whilo_i==`WriteEnable) begin
+            HI<=mem_hi_i;
+            LO<=mem_lo_i;
+        end else if (wb_whilo_i==`WriteEnable) begin
+            HI<=wb_hi_i;
+            LO<=wb_lo_i;
+        end else begin
+            HI<=hi_i;
+            LO<=lo_i;
+        end
+    end
+
+    always @(*) begin
+        if (rst<=`RstEnable) begin
+            moveres<=`ZeroWord;
+        end else begin
+            case (aluop_i)
+                `EXE_MOVN_OP:begin
+                    moveres<=reg1_i;
+                end 
+                `EXE_MOVZ_OP:begin
+                    moveres<=reg1_i;
+                end
+                `EXE_MFHI_OP:begin
+                    moveres<=HI;
+                end
+                `EXE_MFLO_OP:begin
+                    moveres<=LO;
+                end
+                default:begin
+                    
+                end 
+            endcase
+        end
+    end
 
     always @(*) begin
         if (rst==`RstEnable) begin
@@ -71,10 +127,39 @@ module ex (
             `EXE_RES_SHIFT:begin
                 wdata_o<=shiftres;
             end
+            `EXE_RES_MOVE:begin
+                wdata_o<=moveres;
+            end
             default: begin
                 wdata_o<=`ZeroWord;
             end
         endcase
+    end
+
+    always @(*) begin
+        if (rst==`RstEnable) begin
+            whilo_o<=`WriteDisable;
+            hi_o<=`ZeroWord;
+            lo_o<=`ZeroWord;
+        end else begin
+            case (aluop_i)
+                `EXE_MTHI_OP:begin
+                   whilo_o<=`WriteEnable;
+                   hi_o<=reg1_i;
+                   lo_o<=LO; 
+                end 
+                `EXE_MTLO_OP:begin
+                    whilo_o<=`WriteEnable;
+                    hi_o<=HI;
+                    lo_o<=reg1_i;
+                end
+                default:begin
+                    whilo_o<=`WriteDisable;
+                    hi_o<=`ZeroWord;
+                    lo_o<=`ZeroWord;
+                end 
+            endcase
+        end
     end
 
 
