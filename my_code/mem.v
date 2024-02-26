@@ -31,7 +31,7 @@ module mem (
             wd_o<=wd_i;
             wdata_o<=wdata_i;
             wreg_o<=wreg_i;
-            whilo_o<=whilo_o;
+            whilo_o<=whilo_i;
             hi_o<=hi_i;
             lo_o<=lo_i;
         end
