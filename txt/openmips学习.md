@@ -143,9 +143,20 @@
     | reg2_i      |32           |Input            |源操作数2                   | 
     | wd_i        |5            |Input            |要写入的目的寄存器地址        | 
     | wreg_i      | 1           |Input            |是否要写入目的寄存器          | 
-    | wd_o        |5            |Output           |执行阶段的指令要写入的目的寄存器地址        | 
+    | hi_i        |32           |Input            |HILO模块给出的HI寄存器的值           | 
+    | lo_i        |32           |Input            |HILO模块给出的LO寄存器的值            | 
+    | mem_whilo_i |1            |Input            |访存阶段的指令是否要写入HI、LO寄存器                 | 
+    | mem_hi_i    |32           |Input            |访存阶段的指令要写入HI寄存器的值                    | 
+    | mem_lo_i    |32           |Input            |访存阶段的指令要写入LO寄存器的值                  | 
+    | wb_whilo_i  |1            |Input            |回写阶段的指令是否要写入HI、LO寄存器    | 
+    | wb_hi_i     |32           |Input            |回写阶段的指令要写入HI寄存器的值          | 
+    | wb_lo_i     |32           |Input            |回写阶段的指令要写入LO寄存器的值          | 
+    | wd_o        |32           |Output           |执行阶段的指令要写入的目的寄存器地址        | 
     | wreg_o      |1            |Output           |执行阶段的指令是否要写入目的寄存器          | 
     | wdata_o     |32           |Output           |执行阶段的指令要写入目的寄存器的值          | 
+    | whilo_o     |1            |Output           |执行阶段的指令是否要写入HI、LO寄存器        | 
+    | hi_o        |32           |Output           |执行阶段的指令要写入HI寄存器的值            | 
+    | lo_o        |32           |Output           |执行阶段的指令要写入LO寄存器的值            | 
 
     - 纯组合逻辑，先进行子运算，再进行最终运算 
 
@@ -160,9 +171,15 @@
     | ex_wd       | 5           |Input            |执行阶段的指令要写入的目的寄存器地址                | 
     | ex_wreg     |1            |Input            |执行阶段的指令是否写入目的寄存器            | 
     | ex_wdata    |32           |Input            |执行阶段的指令得到的运算结果                  | 
+    | ex_whilo    |1            |Input            |执行阶段的指令是否要写入HI、LO寄存器               | 
+    | ex_hi       |32           |Input            |执行阶段的指令要写入HI寄存器的值           | 
+    | ex_lo       |32           |Input            |执行阶段的指令要写入LO寄存器的值             | 
     | mem_wdata   |32           |Output           |访存阶段的指令得到的运算结果                          | 
     | mem_wd      | 5           |Output           |访存阶段的指令要写入的目的寄存器地址              | 
     | mem_wreg    |1            |Output           |访存阶段的指令是否写入目的寄存器       | 
+    | mem_whilo   |1            |Output           |访存阶段的指令是否要写入HI、LO寄存器               | 
+    | mem_hi      |32           |Output           |访存阶段的指令要写入HI寄存器的值           | 
+    | mem_lo      |32           |Output           |访存阶段的指令要写入LO寄存器的值             | 
     - 时钟缓冲作用 
 
 
@@ -176,9 +193,15 @@
     | wd_i        |5            |Input            |访存阶段的指令要写入的目的寄存器地址        | 
     | wreg_i      | 1           |Input            |访存阶段的指令是否要写入目的寄存器          | 
     | wdata_i     |32           |Input            |访存阶段的指令要写入目的寄存器的值          | 
+    | whilo_i     |1            |Input            |访存阶段的指令最终是否要写入HI、LO寄存器               | 
+    | hi_i        |32           |Input            |访存阶段的指令最终要写入HI寄存器的值           | 
+    | lo_i        |32           |Input            |访存阶段的指令最终要写入LO寄存器的值             | 
     | wd_o        |5            |Output           |访存阶段的指令最终要写入的目的寄存器地址        | 
     | wreg_o      |1            |Output           |访存阶段的指令最终是否要写入目的寄存器          | 
     | wdata_o     |32           |Output           |访存阶段的指令最终要写入目的寄存器的值          | 
+    | whilo_o     |1            |Output           |访存阶段的指令最终是否要写入HI、LO寄存器               | 
+    | hi_o        |32           |Output           |访存阶段的指令最终要写入HI寄存器的值           | 
+    | lo_o        |32           |Output           |访存阶段的指令最终要写入LO寄存器的值             | 
 
     - 目前ori指令本阶段不需要执行操作，简单传递 
 
@@ -193,9 +216,15 @@
     | mem_wd      | 5           |Input            |访存阶段的指令要写入的目的寄存器地址                | 
     | mem_wreg    |1            |Input            |访存阶段的指令是否写入目的寄存器            | 
     | mem_wdata   |32           |Input            |访存阶段的指令得到的运算结果                  | 
+    | mem_whilo   |1            |Input            |访存阶段的指令是否要写入HI、LO寄存器               | 
+    | mem_hi      |32           |Input            |访存阶段的指令要写入HI寄存器的值           | 
+    | mem_lo      |32           |Input            |访存阶段的指令要写入LO寄存器的值             | 
     | wb_wdata    |32           |Output           |回写阶段的指令得到的运算结果                          | 
     | wb_wd       | 5           |Output           |回写阶段的指令要写入的目的寄存器地址              | 
     | wb_wreg     |1            |Output           |回写阶段的指令是否写入目的寄存器       | 
+    | wb_whilo    |1            |Output           |回写阶段的指令是否要写入HI、LO寄存器               | 
+    | wb_hi       |32           |Output           |回写阶段的指令要写入HI寄存器的值           | 
+    | wb_lo       |32           |Output           |回写阶段的指令要写入LO寄存器的值             | 
     - 时钟缓冲作用 
 
 - MIPS编译环境建立 
@@ -231,7 +260,6 @@
     - 数据前推： 
         - 将执行阶段、访存阶段的结果前推给译码阶段，包含信息为是否要写目的寄存器、要写的目的寄存器地址、要写入目的寄存器的数据。 
         - 使用MUX实现源操作数赋值，赋值优先级为：**复位>执行阶段相关>访存阶段相关>回写阶段相关（该处理在regfile.v中）>正常赋值**，原因为需要使用最新的寄存器数据进行运算 
-        - 修改后的ID模块接口说明已在上文中更改 
 
 - 逻辑、移位操作与空指令 
     - 逻辑操作（B1）： and,andi,or,ori,xor,xori,nor,lui(load upper immediate,rt<-immediate||0^16)  
@@ -248,9 +276,39 @@
     - 指令冲突： 
         - nop   =  sll $0,$0,0 
         - ssnop =  sll $0,$0,1 
-        - 实际不影响，$0始终为0，所以nop、ssnop不用特殊处理，当成sll处理即可
+        - 实际不影响，$0始终为0，所以nop、ssnop不用特殊处理，当成sll处理即可 
 
+- 修改后的模块接口说明已在上文中更改 
 
+## Chapter6 移动指令的实现 
+
+- 指令说明： 
+    - movn(move condition on not zero) 
+    - movz(move condition on zero) 
+    - mfhi(move from HI) 
+    - mthi(move to HI) 
+    - mflo(move from LO) 
+    - mtlo(move to LO) 
+- HI/LO特殊寄存器：32bit，用于保存乘法、除法结果 
+    - 乘法：HI保存高32位，LO保存低32位 
+    - 除法：HI保存余数，LO保存商 
+    - HI/LO寄存器不是通用寄存器，涉及该寄存器的读写操作时wreg_o信号置为WriteDisable，wd_o信号置为NOPRegAddr。 
+    - HI/LO寄存器于执行阶段进行读取数据，于回写阶段写入数据 
+    - HI/LO寄存器在流水线中**单独享有一条数据路径：EX->EX/MEM->MEM->MEM/WB->HILO->EX**；传递数据包含写使能信号whilo、读写数据hi、lo。 
+    - 由于存在数据相关，HI/LO数据流水线需要进行数据前推，在访存阶段和回写阶段需要将数据前推到执行阶段。 
+    - 接口 
+
+    | 接口名       | 宽度（bit） | Input/Output      | 作用                      | 
+    | ----------- | ----------- | -----------   | -----------               | 
+    | rst         | 1           |Input            |复位信号                    | 
+    | clk         |1            |Input            |时钟信号                    | 
+    | we          | 5           |Input            |HI、LO寄存器写使能信号      | 
+    | hi_i        |1            |Input            |要写入HI寄存器的值          | 
+    | lo_i        |32           |Input            |要写入LO寄存器的值           | 
+    | hi_o        |32           |Output           |HI寄存器的值                | 
+    | lo_o        | 5           |Output           |LO寄存器的值              | 
+ 
+- 修改后的模块接口说明已在上文中更改 
 
 ## OpenMIPS指令及机器码 
 ![OpenMIPS指令及机器码](/pic/OpenMPIS_INST.jpg "OpenMIPS指令及机器码") 
