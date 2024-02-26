@@ -131,6 +131,62 @@ always @(*) begin
                                 wreg_o<=`WriteDisable;
                                 instvalid<=`InstValid;
                             end
+                            `EXE_MOVZ:begin
+                                aluop_o<=`EXE_MOVZ_OP;
+                                alusel_o<=`EXE_RES_MOVE;
+                                reg1_read_o<=`ReadEnable;
+                                reg2_read_o<=`ReadEnable;
+                                if (reg2_o==`ZeroWord) begin
+                                    wreg_o<=`WriteEnable;
+                                end else begin
+                                    wreg_o<=`WriteDisable;
+                                end
+                                instvalid<=`InstValid;
+                            end
+                            `EXE_MOVN:begin
+                                aluop_o<=`EXE_MOVN_OP;
+                                alusel_o<=`EXE_RES_MOVE;
+                                reg1_read_o<=`ReadEnable;
+                                reg2_read_o<=`ReadEnable;
+                                if (reg2_o !=`ZeroWord) begin
+                                    wreg_o<=`WriteEnable;
+                                end else begin
+                                    wreg_o<=`WriteDisable;
+                                end
+                                instvalid<=`InstValid;
+                            end
+                            `EXE_MFHI:begin
+                                aluop_o<=`EXE_MFHI_OP;
+                                alusel_o<=`EXE_RES_MOVE;
+                                reg1_read_o<=`ReadDisable;
+                                reg2_read_o<=`ReadDisable;
+                                wreg_o<=`WriteEnable;
+                                instvalid<=`InstValid;
+                            end
+                            `EXE_MTHI:begin
+                                aluop_o<=`EXE_MTHI_OP;
+                                alusel_o<=`EXE_RES_MOVE;
+                                reg1_read_o<=`ReadEnable;
+                                reg2_read_o<=`ReadDisable;
+                                wreg_o<=`WriteDisable;
+                                instvalid<=`InstValid;
+                            end
+                            `EXE_MFLO:begin
+                                aluop_o<=`EXE_MFLO_OP;
+                                alusel_o<=`EXE_RES_MOVE;
+                                reg1_read_o<=`ReadDisable;
+                                reg2_read_o<=`ReadDisable;
+                                wreg_o<=`WriteEnable;
+                                instvalid<=`InstValid;
+                            end
+                            `EXE_MTLO:begin
+                                aluop_o<=`EXE_MTLO_OP;
+                                alusel_o<=`EXE_RES_MOVE;
+                                reg1_read_o<=`ReadEnable;
+                                reg2_read_o<=`ReadDisable;
+                                wreg_o<=`WriteDisable;
+                                instvalid<=`InstValid;
+                            end
                             default:begin
                             end 
                         endcase
