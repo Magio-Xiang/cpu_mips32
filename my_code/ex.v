@@ -49,7 +49,7 @@ module ex (
     end
 
     always @(*) begin
-        if (rst<=`RstEnable) begin
+        if (rst==`RstEnable) begin
             moveres<=`ZeroWord;
         end else begin
             case (aluop_i)
