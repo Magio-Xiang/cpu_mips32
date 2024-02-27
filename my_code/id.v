@@ -165,7 +165,6 @@ always @(*) begin
                             end
                             `EXE_MTHI:begin
                                 aluop_o<=`EXE_MTHI_OP;
-                                alusel_o<=`EXE_RES_MOVE;
                                 reg1_read_o<=`ReadEnable;
                                 reg2_read_o<=`ReadDisable;
                                 wreg_o<=`WriteDisable;
@@ -181,16 +180,108 @@ always @(*) begin
                             end
                             `EXE_MTLO:begin
                                 aluop_o<=`EXE_MTLO_OP;
-                                alusel_o<=`EXE_RES_MOVE;
                                 reg1_read_o<=`ReadEnable;
                                 reg2_read_o<=`ReadDisable;
                                 wreg_o<=`WriteDisable;
+                                instvalid<=`InstValid;
+                            end
+                            `EXE_ADD:begin
+                                aluop_o<=`EXE_ADD_OP;
+                                alusel_o<=`EXE_RES_ARITHMETIC;
+                                reg1_read_o<=`ReadEnable;
+                                reg2_read_o<=`ReadEnable;
+                                wreg_o<=`WriteEnable;
+                                instvalid<=`InstValid;
+                            end
+                            `EXE_ADDU:begin
+                                aluop_o<=`EXE_ADDU_OP;
+                                alusel_o<=`EXE_RES_ARITHMETIC;
+                                reg1_read_o<=`ReadEnable;
+                                reg2_read_o<=`ReadEnable;
+                                wreg_o<=`WriteEnable;
+                                instvalid<=`InstValid;
+                            end
+                            `EXE_SUB:begin
+                                aluop_o<=`EXE_SUB_OP;
+                                alusel_o<=`EXE_RES_ARITHMETIC;
+                                reg1_read_o<=`ReadEnable;
+                                reg2_read_o<=`ReadEnable;
+                                wreg_o<=`WriteEnable;
+                                instvalid<=`InstValid;
+                            end
+                            `EXE_SUBU:begin
+                                aluop_o<=`EXE_SUBU_OP;
+                                alusel_o<=`EXE_RES_ARITHMETIC;
+                                reg1_read_o<=`ReadEnable;
+                                reg2_read_o<=`ReadEnable;
+                                wreg_o<=`WriteEnable;
+                                instvalid<=`InstValid;
+                            end
+                            `EXE_SLT:begin
+                                aluop_o<=`EXE_SLT_OP;
+                                alusel_o<=`EXE_RES_ARITHMETIC;
+                                reg1_read_o<=`ReadEnable;
+                                reg2_read_o<=`ReadEnable;
+                                wreg_o<=`WriteEnable;
+                                instvalid<=`InstValid;
+                            end
+                            `EXE_SLTU:begin
+                                aluop_o<=`EXE_SLTU_OP;
+                                alusel_o<=`EXE_RES_ARITHMETIC;
+                                reg1_read_o<=`ReadEnable;
+                                reg2_read_o<=`ReadEnable;
+                                wreg_o<=`WriteEnable;
+                                instvalid<=`InstValid;
+                            end
+                            `EXE_MULT:begin
+                                aluop_o<=`EXE_MULT_OP;
+                                reg1_read_o<=`ReadEnable;
+                                reg2_read_o<=`ReadEnable;
+                                wreg_o<=`WriteDisable;
+                                instvalid<=`InstValid;
+                            end
+                            `EXE_MULTU:begin
+                                aluop_o<=`EXE_MULTU_OP;
+                                reg1_read_o<=`ReadEnable;
+                                reg2_read_o<=`ReadEnable;
+                                wreg_o<=`WriteEnable;
                                 instvalid<=`InstValid;
                             end
                             default:begin
                             end 
                         endcase
                     end 
+                    default:begin
+                        
+                    end 
+                endcase
+            end
+            `EXE_SPECIAL2_INST:begin
+                case (op3)
+                    `EXE_CLZ:begin
+                        aluop_o<=`EXE_CLZ_OP;
+                        alusel_o<=`EXE_RES_ARITHMETIC;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadDisable;
+                        wreg_o<=`WriteEnable;
+                        instvalid<=`InstValid;
+                    end 
+                    `EXE_CLO:begin
+                        aluop_o<=`EXE_CLO_OP;
+                        alusel_o<=`EXE_RES_ARITHMETIC;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadDisable;
+                        wreg_o<=`WriteEnable;
+                        instvalid<=`InstValid;
+                    end
+                    `EXE_MUL:begin
+                        aluop_o<=`EXE_MUL_OP;
+                        alusel_o<=`EXE_RES_MUL;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadEnable;
+                        wreg_o<=`WriteEnable;
+                        instvalid<=`InstValid;
+                    end
                     default:begin
                         
                     end 
@@ -242,6 +333,46 @@ always @(*) begin
                 reg1_read_o<=`ReadDisable;
                 reg2_read_o<=`ReadDisable;
                 wreg_o<=`WriteDisable;
+                instvalid<=`InstValid;
+            end
+            `EXE_ADDI:begin
+                aluop_o<=`EXE_ADDI_OP;
+                alusel_o<=`EXE_RES_ARITHMETIC;
+                reg1_read_o<=`ReadEnable;
+                reg2_read_o<=`ReadDisable;
+                imm<={{16{inst_i[15]}},inst_i[15:0]};
+                wd_o<=inst_i[20:16];
+                wreg_o<=`WriteEnable;
+                instvalid<=`InstValid;
+            end
+            `EXE_ADDIU:begin
+                aluop_o<=`EXE_ADDIU_OP;
+                alusel_o<=`EXE_RES_ARITHMETIC;
+                reg1_read_o<=`ReadEnable;
+                reg2_read_o<=`ReadDisable;
+                imm<={{16{inst_i[15]}},inst_i[15:0]};
+                wd_o<=inst_i[20:16];
+                wreg_o<=`WriteEnable;
+                instvalid<=`InstValid;
+            end
+            `EXE_SLTI:begin
+                aluop_o<=`EXE_SLTI_OP;
+                alusel_o<=`EXE_RES_ARITHMETIC;
+                reg1_read_o<=`ReadEnable;
+                reg2_read_o<=`ReadDisable;
+                imm<={{16{inst_i[15]}},inst_i[15:0]};
+                wd_o<=inst_i[20:16];
+                wreg_o<=`WriteEnable;
+                instvalid<=`InstValid;
+            end
+            `EXE_SLTIU:begin
+                aluop_o<=`EXE_SLTIU_OP;
+                alusel_o<=`EXE_RES_ARITHMETIC;
+                reg1_read_o<=`ReadEnable;
+                reg2_read_o<=`ReadDisable;
+                imm<={{16{inst_i[15]}},inst_i[15:0]};
+                wd_o<=inst_i[20:16];
+                wreg_o<=`WriteEnable;
                 instvalid<=`InstValid;
             end
             default:begin              
