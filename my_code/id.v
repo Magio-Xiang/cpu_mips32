@@ -356,7 +356,7 @@ always @(*) begin
                 instvalid<=`InstValid;
             end
             `EXE_SLTI:begin
-                aluop_o<=`EXE_SLTI_OP;
+                aluop_o<=`EXE_SLT_OP;
                 alusel_o<=`EXE_RES_ARITHMETIC;
                 reg1_read_o<=`ReadEnable;
                 reg2_read_o<=`ReadDisable;
@@ -366,7 +366,7 @@ always @(*) begin
                 instvalid<=`InstValid;
             end
             `EXE_SLTIU:begin
-                aluop_o<=`EXE_SLTIU_OP;
+                aluop_o<=`EXE_SLTU_OP;
                 alusel_o<=`EXE_RES_ARITHMETIC;
                 reg1_read_o<=`ReadEnable;
                 reg2_read_o<=`ReadDisable;
