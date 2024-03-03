@@ -108,6 +108,28 @@ module ex (
         end
     end
     
+    assign opdata1_mult = (((aluop_i == `EXE_MUL_OP)||(aluop_i == `EXE_MULT_OP))&&(reg1_i[31]==1'b1))
+                            ? (~reg1_i+1) : reg1_i;
+    assign opdata2_mult = (((aluop_i == `EXE_MUL_OP)||(aluop_i == `EXE_MULT_OP))&&(reg2_i[31]==1'b1))
+                            ? (~reg2_i+1) : reg2_i;
+    assign hilo_temp = opdata1_mult*opdata2_mult;
+
+    always @(*) begin
+        if (rst==`RstEnable) begin
+            mulres<={`ZeroWord,`ZeroWord};
+        end else begin
+            if ((aluop_i==`EXE_MULT_OP)||(aluop_i==`EXE_MUL_OP)) begin
+                if (reg1_i[31]^reg2_i[31]==1'b0) begin
+                    mulres<=hilo_temp;
+                end else begin
+                    mulres<=~hilo_temp+1;
+                end
+            end else begin
+                mulres<=hilo_temp;
+            end
+        end
+    end            
+
     always @(*) begin
         if (rst==`RstEnable) begin
             HI<=`ZeroWord;
@@ -195,7 +217,11 @@ module ex (
 
     always @(*) begin
         wd_o<=wd_i;
-        wreg_o<=wreg_i;
+        if (((aluop_i==`EXE_SUB_OP)||(aluop_i==`EXE_ADD_OP)||(aluop_i==`EXE_ADDI_OP))&&(ov_sum==1'b1)) begin
+            wreg_o<=`WriteDisable;
+        end else begin
+            wreg_o<=wreg_i;
+        end
         case (alusel_i)
             `EXE_RES_LOGIC:begin
                 wdata_o<=logicout;
@@ -205,6 +231,12 @@ module ex (
             end
             `EXE_RES_MOVE:begin
                 wdata_o<=moveres;
+            end
+            `EXE_RES_ARITHMETIC:begin
+                wdata_o<=arithmeticres;
+            end
+            `EXE_RES_MUL:begin
+                wdata_o<=mulres[31:0];
             end
             default: begin
                 wdata_o<=`ZeroWord;
@@ -219,6 +251,16 @@ module ex (
             lo_o<=`ZeroWord;
         end else begin
             case (aluop_i)
+                `EXE_MULT_OP:begin
+                    whilo_o<=`WriteEnable;
+                    hi_o<=mulres[63:32];
+                    lo_o<=mulres[31:0];
+                end
+                `EXE_MULTU_OP:begin
+                    whilo_o<=`WriteEnable;
+                    hi_o<=mulres[63:32];
+                    lo_o<=mulres[31:0];
+                end
                 `EXE_MTHI_OP:begin
                    whilo_o<=`WriteEnable;
                    hi_o<=reg1_i;
