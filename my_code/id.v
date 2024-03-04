@@ -26,16 +26,19 @@ module id (
     output reg[`RegBus] reg1_o,
     output reg[`RegBus] reg2_o,
     output reg[`RegAddrBus] wd_o,
-    output reg wreg_o
-);
-    
-    wire[5:0] op = inst_i[31:26];
-    wire[4:0] op2= inst_i[10:6];
-    wire[5:0] op3= inst_i[5:0];
-    wire[4:0] op4= inst_i[20:16];
+    output reg wreg_o,
 
-    reg[`RegBus]	imm;
-    reg instvalid;
+    output wire                   stallreq	
+);
+
+assign stallreq = `NoStop;
+
+wire[5:0] op = inst_i[31:26];
+wire[4:0] op2= inst_i[10:6];
+wire[5:0] op3= inst_i[5:0];
+wire[4:0] op4= inst_i[20:16];
+reg[`RegBus]	imm;
+reg instvalid;
 
 always @(*) begin
     if (rst == `RstEnable) begin
