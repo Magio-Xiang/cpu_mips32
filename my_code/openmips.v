@@ -72,12 +72,17 @@ wire reg2_read;
 wire[`RegBus] hi_o;
 wire[`RegBus] lo_o;
 
+// stall
+wire[5:0] stall;
+wire stallreq_from_id;	
+wire stallreq_from_ex;
 
 assign rom_addr_o = pc;
 
 pc_reg u_pc_reg(
     .clk ( clk ),
     .rst ( rst ),
+    .stall(stall),
     .pc  ( pc  ),
     .ce  ( rom_ce_o  )
 );
@@ -87,6 +92,7 @@ if_id u_if_id(
     .rst     ( rst     ),
     .if_pc   ( pc   ),
     .if_inst ( rom_data_i ),
+    .stall   (stall),
     .id_pc   ( id_pc_i   ),
     .id_inst  ( id_inst_i  )
 );
@@ -113,7 +119,8 @@ id u_id(
     .reg1_o      ( id_reg1_o      ),
     .reg2_o      ( id_reg2_o      ),
     .wd_o        ( id_wd_o        ),
-    .wreg_o      ( id_wreg_o      )
+    .wreg_o      ( id_wreg_o      ),
+    .stallreq    ( stallreq_from_id)
 );
 
 id_ex u_id_ex(
@@ -125,6 +132,7 @@ id_ex u_id_ex(
     .id_reg2   ( id_reg2_o   ),
     .id_wd     ( id_wd_o     ),
     .id_wreg   ( id_wreg_o   ),
+    .stall     (stall        ),
     .ex_aluop  ( ex_aluop_i  ),
     .ex_alusel ( ex_alusel_i ),
     .ex_reg1   ( ex_reg1_i   ),
@@ -154,7 +162,8 @@ ex u_ex(
     .wb_lo_i     ( wb_lo_i     ),
     .whilo_o     ( ex_whilo_o     ),
     .hi_o        ( ex_hi_o        ),
-    .lo_o        ( ex_lo_o     )
+    .lo_o        ( ex_lo_o     ),
+    .stallreq    ( stallreq_from_ex)
 );
 
 
@@ -167,6 +176,7 @@ ex_mem u_ex_mem(
     .ex_whilo  ( ex_whilo_o  ),
     .ex_hi     ( ex_hi_o     ),
     .ex_lo     ( ex_lo_o     ),
+    .stall     (stall        ),
 
     .mem_wd    ( mem_wd_i    ),
     .mem_wdata ( mem_wdata_i ),
@@ -201,6 +211,7 @@ mem_wb u_mem_wb(
     .mem_whilo ( mem_whilo_o ),
     .mem_hi    ( mem_hi_o    ),
     .mem_lo    ( mem_lo_o    ),
+    .stall     (stall        ),
     .wb_wd     ( wb_wd_i     ),
     .wb_wreg   ( wb_wreg_i   ),
     .wb_wdata  ( wb_wdata_i  ),
