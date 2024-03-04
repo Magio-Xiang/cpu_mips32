@@ -2,6 +2,7 @@
 module pc_reg (
     input wire clk,
     input wire rst,
+    input wire[5:0] stall,
 
     output reg[`InstAddrBus] pc,
     output reg ce 
@@ -22,10 +23,11 @@ module pc_reg (
         begin
             pc<=`ZeroWord;
         end
-        else
+        else if(stall[0]==`NoStop)
         begin
             pc<=pc+4'h4;
         end
+        
 
     end
 endmodule
