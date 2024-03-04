@@ -15,3 +15,6 @@
     - mthi和mtlo的alusel_o置为EXE_RES_NOP而不是EXE_RES_MOVE，目前代码改成move来进行测试是否对计算结果有影响->无影响
         - alusel_o的设置影响wdata_o的赋值，对于mthi、mtlo指令而言不需要对通用寄存器赋值，所以**wreg_o置WriteDisable，alusel_o置EXE_RES_NOP，双重保护保证不会赋值出错**
         - mult、multu等指令将结果写入HI、LO寄存器，不需要对通用寄存器赋值，应与mthi、mtlo相似wreg_o置WriteDisable，alusel_o置EXE_RES_NOP
+
+- my_code/if_id.v:
+    - 流水线暂停没想明白
