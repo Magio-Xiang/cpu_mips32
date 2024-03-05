@@ -130,6 +130,14 @@ id u_id(
     .stallreq    ( stallreq_from_id)
 );
 
+ctrl u_ctrl(
+    .rst              ( rst              ),
+    .stallreq_from_id ( stallreq_from_id ),
+    .stallreq_from_ex ( stallreq_from_ex ),
+    .stall            ( stall            )
+);
+
+
 id_ex u_id_ex(
     .clk       ( clk       ),
     .rst       ( rst       ),
