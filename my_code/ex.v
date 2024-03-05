@@ -155,7 +155,7 @@ module ex (
             stallreq_for_madd_msub<=`NoStop;
         end else begin
             case (aluop_i)
-                `EXE_MADD_OP:begin
+                `EXE_MADD_OP,`EXE_MADDU_OP:begin
                     case (cnt_i)
                         2'b00:begin
                             hilo_temp_o<=mulres;
@@ -174,7 +174,7 @@ module ex (
                         end 
                     endcase
                 end 
-                `EXE_MSUB_OP:begin
+                `EXE_MSUB_OP,`EXE_MSUBU_OP:begin
                     case (cnt_i)
                         2'b00:begin
                             hilo_temp_o<=~mulres+1;
@@ -339,7 +339,7 @@ module ex (
                     hi_o<=HI;
                     lo_o<=reg1_i;
                 end
-                `EXE_MSUB_OP,`EXE_SUBU_OP,`EXE_MADD_OP,`EXE_MADDU_OP:begin
+                `EXE_MSUB_OP,`EXE_MSUBU_OP,`EXE_MADD_OP,`EXE_MADDU_OP:begin
                     whilo_o<=`WriteEnable;
                     hi_o<=hilo_temp1[63:32];
                     lo_o<=hilo_temp1[31:0];
