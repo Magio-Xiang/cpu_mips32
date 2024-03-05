@@ -77,6 +77,13 @@ wire[5:0] stall;
 wire stallreq_from_id;	
 wire stallreq_from_ex;
 
+//连接执行阶段与ex_reg模块，用于多周期的MADD、MADDU、MSUB、MSUBU指令
+wire[`DoubleRegBus] hilo_temp_o;
+wire[1:0] cnt_o;
+
+wire[`DoubleRegBus] hilo_temp_i;
+wire[1:0] cnt_i;
+
 assign rom_addr_o = pc;
 
 pc_reg u_pc_reg(
@@ -149,9 +156,6 @@ ex u_ex(
     .reg2_i   ( ex_reg2_i   ),
     .wd_i     ( ex_wd_i     ),
     .wreg_i   ( ex_wreg_i   ),
-    .wd_o     ( ex_wd_o     ),
-    .wreg_o   ( ex_wreg_o   ),
-    .wdata_o  ( ex_wdata_o  ),
     .hi_i        ( hi_o        ),
     .lo_i        ( lo_o        ),
     .mem_whilo_i ( mem_whilo_o ),
@@ -160,10 +164,18 @@ ex u_ex(
     .wb_whilo_i  ( wb_whilo_i  ),
     .wb_hi_i     ( wb_hi_i     ),
     .wb_lo_i     ( wb_lo_i     ),
+    .hilo_temp_i (hilo_temp_i),
+	.cnt_i       (cnt_i),
+
+    .wd_o     ( ex_wd_o     ),
+    .wreg_o   ( ex_wreg_o   ),
+    .wdata_o  ( ex_wdata_o  ),
     .whilo_o     ( ex_whilo_o     ),
     .hi_o        ( ex_hi_o        ),
     .lo_o        ( ex_lo_o     ),
-    .stallreq    ( stallreq_from_ex)
+    .stallreq    ( stallreq_from_ex),
+    .hilo_temp_o(hilo_temp_o),
+	.cnt_o      (cnt_o)
 );
 
 
@@ -177,13 +189,17 @@ ex_mem u_ex_mem(
     .ex_hi     ( ex_hi_o     ),
     .ex_lo     ( ex_lo_o     ),
     .stall     (stall        ),
+    .hilo_i    (hilo_temp_o),
+	.cnt_i     (cnt_o),	
 
     .mem_wd    ( mem_wd_i    ),
     .mem_wdata ( mem_wdata_i ),
     .mem_wreg  ( mem_wreg_i  ),
     .mem_whilo ( mem_whilo_i ),
     .mem_hi    ( mem_hi_i    ),
-    .mem_lo    ( mem_lo_i    )
+    .mem_lo    ( mem_lo_i    ),
+    .hilo_o    (hilo_temp_i),
+	.cnt_o     (cnt_i)
 );
 
 mem u_mem(
