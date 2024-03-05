@@ -285,6 +285,38 @@ always @(*) begin
                         wreg_o<=`WriteEnable;
                         instvalid<=`InstValid;
                     end
+                    `EXE_MADD:begin
+                        aluop_o<=`EXE_MADD_OP;
+                        alusel_o<=`EXE_RES_MUL;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadEnable;
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
+                    `EXE_MADDU:begin
+                        aluop_o<=`EXE_MADDU_OP;
+                        alusel_o<=`EXE_RES_MUL;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadEnable;
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
+                    `EXE_MSUB:begin
+                        aluop_o<=`EXE_MSUB_OP;
+                        alusel_o<=`EXE_RES_MUL;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadEnable;
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
+                    `EXE_MSUBU:begin
+                        aluop_o<=`EXE_MSUBU_OP;
+                        alusel_o<=`EXE_RES_MUL;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadEnable;
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
                     default:begin
                         
                     end 
