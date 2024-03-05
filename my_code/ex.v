@@ -17,6 +17,8 @@ module ex (
     input wire wb_whilo_i,
     input wire[`RegBus] wb_hi_i,
     input wire[`RegBus] wb_lo_i,
+    input wire[1:0] cnt_i,
+    input wire[`DoubleRegBus] hilo_temp_i,
 
     output reg whilo_o,
     output reg[`RegBus] hi_o,
@@ -26,7 +28,9 @@ module ex (
     output reg wreg_o,
     output reg[`RegBus] wdata_o,
     
-    output reg										stallreq   
+    output reg		stallreq,
+    output reg [1:0] cnt_o,
+    output reg[`DoubleRegBus] hilo_temp_o   
 );
     reg[`RegBus] logicout;
     reg[`RegBus] shiftres;
@@ -45,12 +49,15 @@ module ex (
     wire[`RegBus] opdata1_mult;
     wire[`RegBus] opdata2_mult;
     wire[`DoubleRegBus] hilo_temp;
+    reg[`DoubleRegBus] hilo_temp1;
+    reg stallreq_for_madd_msub;
     
+    //***************************算术运算*******************************************//
+    //计算操作数准备
     assign reg2_i_mux = ((aluop_i==`EXE_SUB_OP)||
                         (aluop_i==`EXE_SUBU_OP)||
                         (aluop_i==`EXE_SLT_OP))?
                             (~reg2_i)+1:reg2_i;
-
     assign result_sum = reg1_i + reg2_i_mux;
     assign ov_sum = ((reg1_i[31])&&(reg2_i_mux[31])&&(~result_sum[31]))||
                     ((~reg1_i[31])&&(~reg2_i_mux[31])&&(result_sum[31]));
@@ -60,9 +67,21 @@ module ex (
                          (!reg1_i[31] && !reg2_i[31] && result_sum[31])||
 			                   (reg1_i[31] && reg2_i[31] && result_sum[31]))
 			                   :	(reg1_i < reg2_i);
-      
     assign reg1_i_not = ~reg1_i;
-
+    assign opdata1_mult = (((aluop_i == `EXE_MUL_OP)
+                            ||(aluop_i == `EXE_MULT_OP)
+                            ||(aluop_i == `EXE_MADD_OP)
+                            ||(aluop_i == `EXE_MSUB_OP))
+                            &&(reg1_i[31]==1'b1))
+                            ? (~reg1_i+1) : reg1_i;
+    assign opdata2_mult = (((aluop_i == `EXE_MUL_OP)
+                            ||(aluop_i == `EXE_MULT_OP)
+                            ||(aluop_i == `EXE_MADD_OP)
+                            ||(aluop_i == `EXE_MSUB_OP))
+                            &&(reg2_i[31]==1'b1))
+                            ? (~reg2_i+1) : reg2_i;
+    assign hilo_temp = opdata1_mult*opdata2_mult;
+    //arithmeticres算术结果计算
     always @(*) begin
         if (rst==`RstEnable) begin
             arithmeticres<=`ZeroWord;
@@ -109,18 +128,15 @@ module ex (
             endcase
         end
     end
-    
-    assign opdata1_mult = (((aluop_i == `EXE_MUL_OP)||(aluop_i == `EXE_MULT_OP))&&(reg1_i[31]==1'b1))
-                            ? (~reg1_i+1) : reg1_i;
-    assign opdata2_mult = (((aluop_i == `EXE_MUL_OP)||(aluop_i == `EXE_MULT_OP))&&(reg2_i[31]==1'b1))
-                            ? (~reg2_i+1) : reg2_i;
-    assign hilo_temp = opdata1_mult*opdata2_mult;
-
+    //mulres乘法结果计算
     always @(*) begin
         if (rst==`RstEnable) begin
             mulres<={`ZeroWord,`ZeroWord};
         end else begin
-            if ((aluop_i==`EXE_MULT_OP)||(aluop_i==`EXE_MUL_OP)) begin
+            if ((aluop_i == `EXE_MUL_OP)
+                ||(aluop_i == `EXE_MULT_OP)
+                ||(aluop_i == `EXE_MADD_OP)
+                ||(aluop_i == `EXE_MSUB_OP)) begin
                 if (reg1_i[31]^reg2_i[31]==1'b0) begin
                     mulres<=hilo_temp;
                 end else begin
@@ -131,23 +147,64 @@ module ex (
             end
         end
     end            
-
+    //累乘结果额外计算
     always @(*) begin
         if (rst==`RstEnable) begin
-            HI<=`ZeroWord;
-            LO<=`ZeroWord;
-        end else if (mem_whilo_i==`WriteEnable) begin
-            HI<=mem_hi_i;
-            LO<=mem_lo_i;
-        end else if (wb_whilo_i==`WriteEnable) begin
-            HI<=wb_hi_i;
-            LO<=wb_lo_i;
+            hilo_temp_o<={`ZeroWord,`ZeroWord};
+            cnt_o<=2'b00;
+            stallreq_for_madd_msub<=`NoStop;
         end else begin
-            HI<=hi_i;
-            LO<=lo_i;
+            case (aluop_i)
+                `EXE_MADD_OP:begin
+                    case (cnt_i)
+                        2'b00:begin
+                            hilo_temp_o<=mulres;
+                            cnt_o<=2'b01;
+                            hilo_temp1<={`ZeroWord,`ZeroWord};
+                            stallreq_for_madd_msub<=`Stop;
+                        end 
+                        2'b01:begin
+                            hilo_temp_o<={`ZeroWord,`ZeroWord};
+                            cnt_o<=2'b10;
+                            hilo_temp1<=hilo_temp_i+{HI,LO};
+                            stallreq_for_madd_msub<=`NoStop;
+                        end
+                        default:begin
+                            
+                        end 
+                    endcase
+                end 
+                `EXE_MSUB_OP:begin
+                    case (cnt_i)
+                        2'b00:begin
+                            hilo_temp_o<=~mulres+1;
+                            cnt_o<=2'b01;
+                            hilo_temp1<={`ZeroWord,`ZeroWord};
+                            stallreq_for_madd_msub<=`Stop;
+                        end 
+                        2'b01:begin
+                            hilo_temp_o<={`ZeroWord,`ZeroWord};
+                            cnt_o<=2'b10;
+                            hilo_temp1<=hilo_temp_i+{HI,LO};
+                            stallreq_for_madd_msub<=`NoStop;
+                        end
+                        default:begin
+                            
+                        end
+                    endcase
+                end
+                default: begin
+                    hilo_temp_o<={`ZeroWord,`ZeroWord};
+                    cnt_o<=2'b00;
+                    stallreq_for_madd_msub<=`NoStop;
+                end
+            endcase
         end
     end
 
+//***********************************************************************//
+
+//**************************移动操作***********************************//
     always @(*) begin
         if (rst==`RstEnable) begin
             moveres<=`ZeroWord;
@@ -171,7 +228,9 @@ module ex (
             endcase
         end
     end
+//***********************************************************************//
 
+//*******************************逻辑操作******************************//
     always @(*) begin
         if (rst==`RstEnable) begin
             logicout<=`ZeroWord;
@@ -195,7 +254,9 @@ module ex (
             endcase
         end
     end
+//**********************************************************************//
 
+//*******************************移位操作******************************//
     always @(*) begin
         if (rst==`RstEnable) begin
             shiftres<=`ZeroWord;
@@ -216,7 +277,10 @@ module ex (
             endcase
         end
     end
+//**********************************************************************//
 
+
+//****************************写通用寄存器**********************************//
     always @(*) begin
         wd_o<=wd_i;
         if (((aluop_i==`EXE_SUB_OP)||(aluop_i==`EXE_ADD_OP)||(aluop_i==`EXE_ADDI_OP))&&(ov_sum==1'b1)) begin
@@ -245,7 +309,9 @@ module ex (
             end
         endcase
     end
+//**********************************************************************//
 
+//************************写hilo寄存器***********************************//
     always @(*) begin
         if (rst==`RstEnable) begin
             whilo_o<=`WriteDisable;
@@ -273,6 +339,11 @@ module ex (
                     hi_o<=HI;
                     lo_o<=reg1_i;
                 end
+                `EXE_MSUB_OP,`EXE_SUBU_OP,`EXE_MADD_OP,`EXE_MADDU_OP:begin
+                    whilo_o<=`WriteEnable;
+                    hi_o<=hilo_temp1[63:32];
+                    lo_o<=hilo_temp1[31:0];
+                end
                 default:begin
                     whilo_o<=`WriteDisable;
                     hi_o<=`ZeroWord;
@@ -281,7 +352,29 @@ module ex (
             endcase
         end
     end
+//**********************************************************************//
 
 
+//HI、LO寄存器数据读取，解决数据相关问题
+    always @(*) begin
+        if (rst==`RstEnable) begin
+            HI<=`ZeroWord;
+            LO<=`ZeroWord;
+        end else if (mem_whilo_i==`WriteEnable) begin
+            HI<=mem_hi_i;
+            LO<=mem_lo_i;
+        end else if (wb_whilo_i==`WriteEnable) begin
+            HI<=wb_hi_i;
+            LO<=wb_lo_i;
+        end else begin
+            HI<=hi_i;
+            LO<=lo_i;
+        end
+    end
+
+//流水线暂停信号
+    always @(*) begin
+        stallreq = stallreq_for_madd_msub;    
+    end
 
 endmodule
