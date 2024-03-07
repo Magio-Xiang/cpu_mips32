@@ -84,6 +84,14 @@ wire[1:0] cnt_o;
 wire[`DoubleRegBus] hilo_temp_i;
 wire[1:0] cnt_i;
 
+//div连接ex
+wire signed_div;
+wire[`RegBus] div_opdata1;
+wire[`RegBus] div_opdata2;
+wire div_start;
+wire[`DoubleRegBus] div_result;
+wire div_ready;
+
 assign rom_addr_o = pc;
 
 pc_reg u_pc_reg(
@@ -174,6 +182,8 @@ ex u_ex(
     .wb_lo_i     ( wb_lo_i     ),
     .hilo_temp_i (hilo_temp_i),
 	.cnt_i       (cnt_i),
+    .div_result_i  ( div_result  ),
+    .div_ready_i   ( div_ready   ),
 
     .wd_o     ( ex_wd_o     ),
     .wreg_o   ( ex_wreg_o   ),
@@ -183,7 +193,12 @@ ex u_ex(
     .lo_o        ( ex_lo_o     ),
     .stallreq    ( stallreq_from_ex),
     .hilo_temp_o(hilo_temp_o),
-	.cnt_o      (cnt_o)
+	.cnt_o      (cnt_o),
+    .signed_div_o  ( signed_div  ),
+    .div_start_o   ( div_start   ),
+    .div_opdata1_o ( div_opdata1 ),
+    .div_opdata2_o  ( div_opdata2  )
+
 );
 
 
@@ -268,6 +283,16 @@ hilo_reg u_hilo_reg(
     .lo_o  ( lo_o  )
 );
 
-
+div u_div(
+    .rst          ( rst          ),
+    .clk          ( clk          ),
+    .signed_div_i ( signed_div ),
+    .opdata1_i    ( div_opdata1    ),
+    .opdata2_i    ( div_opdata2  ),
+    .start_i      ( div_start  ),
+    .annul_i      ( 1'b0    ),
+    .result_o     ( div_result     ),
+    .ready_o      ( div_ready     )
+);
 
 endmodule
