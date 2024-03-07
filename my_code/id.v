@@ -247,7 +247,21 @@ always @(*) begin
                                 aluop_o<=`EXE_MULTU_OP;
                                 reg1_read_o<=`ReadEnable;
                                 reg2_read_o<=`ReadEnable;
-                                wreg_o<=`WriteEnable;
+                                wreg_o<=`WriteDisable;
+                                instvalid<=`InstValid;
+                            end
+                            `EXE_DIV:begin
+                                aluop_o<=`EXE_DIV_OP;
+                                reg1_read_o<=`ReadEnable;
+                                reg2_read_o<=`ReadEnable;
+                                wreg_o<=`WriteDisable;
+                                instvalid<=`InstValid;
+                            end
+                            `EXE_DIVU:begin
+                                aluop_o<=`EXE_DIVU_OP;
+                                reg1_read_o<=`ReadEnable;
+                                reg2_read_o<=`ReadEnable;
+                                wreg_o<=`WriteDisable;
                                 instvalid<=`InstValid;
                             end
                             default:begin
