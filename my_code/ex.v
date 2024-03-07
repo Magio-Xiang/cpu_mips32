@@ -19,6 +19,8 @@ module ex (
     input wire[`RegBus] wb_lo_i,
     input wire[1:0] cnt_i,
     input wire[`DoubleRegBus] hilo_temp_i,
+    input wire[`DoubleRegBus] div_result_i,
+    input wire div_ready_i,
 
     output reg whilo_o,
     output reg[`RegBus] hi_o,
@@ -30,7 +32,11 @@ module ex (
     
     output reg		stallreq,
     output reg [1:0] cnt_o,
-    output reg[`DoubleRegBus] hilo_temp_o   
+    output reg[`DoubleRegBus] hilo_temp_o,
+    output reg signed_div_o,
+    output reg div_start_o,
+    output reg[`RegBus] div_opdata1_o,
+    output reg[`RegBus] div_opdata2_o   
 );
     reg[`RegBus] logicout;
     reg[`RegBus] shiftres;
@@ -51,7 +57,8 @@ module ex (
     wire[`DoubleRegBus] hilo_temp;
     reg[`DoubleRegBus] hilo_temp1;
     reg stallreq_for_madd_msub;
-    
+    reg stallreq_for_div;
+
     //***************************算术运算*******************************************//
     //计算操作数准备
     assign reg2_i_mux = ((aluop_i==`EXE_SUB_OP)||
@@ -201,7 +208,69 @@ module ex (
             endcase
         end
     end
-
+    //除法模块控制信息
+    always @(*) begin
+        if (rst==`RstEnable) begin
+            signed_div_o<=1'b0;
+            stallreq_for_div<=`NoStop;
+            div_opdata1_o<=`ZeroWord;
+            div_opdata2_o<=`ZeroWord;
+            div_start_o<=`DivStop;
+        end else begin
+            signed_div_o<=1'b0;
+            stallreq_for_div<=`NoStop;
+            div_opdata1_o<=`ZeroWord;
+            div_opdata2_o<=`ZeroWord;
+            div_start_o<=`DivStop;
+            case (aluop_i)
+                `EXE_DIV_OP:begin
+                    if (div_ready_i == `DivResultNotReady) begin
+                        signed_div_o<=1'b1;
+                        stallreq_for_div<=`Stop;
+                        div_opdata1_o<=reg1_i;
+                        div_opdata2_o<=reg2_i;
+                        div_start_o<=`DivStart;
+                    end else if (div_ready_i == `DivResultReady) begin
+                        signed_div_o<=1'b1;
+                        stallreq_for_div<=`NoStop;
+                        div_opdata1_o<=reg1_i;
+                        div_opdata2_o<=reg2_i;
+                        div_start_o<=`DivStop;
+                    end else begin
+                        signed_div_o<=1'b0;
+                        stallreq_for_div<=`NoStop;
+                        div_opdata1_o<=`ZeroWord;
+                        div_opdata2_o<=`ZeroWord;
+                        div_start_o<=`DivStop;
+                    end
+                end 
+                `EXE_DIVU_OP:begin
+                    if (div_ready_i == `DivResultNotReady) begin
+                        signed_div_o<=1'b0;
+                        stallreq_for_div<=`Stop;
+                        div_opdata1_o<=reg1_i;
+                        div_opdata2_o<=reg2_i;
+                        div_start_o<=`DivStart;
+                    end else if (div_ready_i == `DivResultReady) begin
+                        signed_div_o<=1'b0;
+                        stallreq_for_div<=`NoStop;
+                        div_opdata1_o<=reg1_i;
+                        div_opdata2_o<=reg2_i;
+                        div_start_o<=`DivStop;
+                    end else begin
+                        signed_div_o<=1'b0;
+                        stallreq_for_div<=`NoStop;
+                        div_opdata1_o<=`ZeroWord;
+                        div_opdata2_o<=`ZeroWord;
+                        div_start_o<=`DivStop;
+                    end
+                end
+                default:begin
+                  
+                end 
+            endcase
+        end
+    end
 //***********************************************************************//
 
 //**************************移动操作***********************************//
@@ -344,6 +413,11 @@ module ex (
                     hi_o<=hilo_temp1[63:32];
                     lo_o<=hilo_temp1[31:0];
                 end
+                `EXE_DIV_OP,`EXE_DIVU_OP:begin
+                    whilo_o<=`WriteEnable;
+                    hi_o <= div_result_i[63:32];
+                    lo_o <= div_result_i[31:0];
+                end
                 default:begin
                     whilo_o<=`WriteDisable;
                     hi_o<=`ZeroWord;
@@ -374,7 +448,7 @@ module ex (
 
 //流水线暂停信号
     always @(*) begin
-        stallreq = stallreq_for_madd_msub;    
+        stallreq = stallreq_for_madd_msub || stallreq_for_div;    
     end
 
 endmodule
