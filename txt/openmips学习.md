@@ -38,7 +38,8 @@
     | 接口名       | 宽度（bit） | Input/Output      | 作用             | 
     | ----------- | ----------- | -----------   | -----------      | 
     | rst         | 1           |Input            |复位信号           | 
-    | clk         |1            | Input           |时钟信号           | 
+    | clk         |1            | Input           |时钟信号           |
+    | stall       |6            | Input           |流水线暂停控制信号  |  
     | pc          |32           |Output           |要读取的指令地址    | 
     | ce          |1            | Output          |指令存储器使能信号  | 
     - OpenMIPS按照字节寻址，一条指令对应4个字节，32位，每时钟周期PC自加4 
@@ -53,6 +54,7 @@
     | clk         |1            | Input           |时钟信号                    | 
     | if_pc       |32           |Input            |取指阶段得到的指令地址       | 
     | if_inst     |32           |Input            |取指阶段得到的指令           | 
+    | stall       |6            | Input           |流水线暂停控制信号  |
     | id_pc       |32           |Output           |译码阶段的指令地址           | 
     | id_inst     |32           | Output          |译码阶段的指令               | 
     - 时钟缓冲电路 
@@ -105,6 +107,7 @@
     | reg2_o      |32           |Output           |运算的源操作数2             | 
     | wd_o        |5            |Output           |输出结果要写入的目的寄存器地址   | 
     | wreg_o      |1            |Output           |输出结果是否要写入目的寄存器       |  
+    | stallreq    |6            |Output           |译指阶段输出流水线暂停请求信号       | 
     - 源操作数可以来自寄存器或者立即数 
     - 运算类型由两个参数决定，alusel_o决定运算类型包括逻辑运算、移位运算、算术运算等，aluop_o决定子类型，对逻辑运算而言包括或与非异或等 
 
@@ -121,6 +124,7 @@
     | id_reg1     |32           |Input            |译码阶段的指令要进行的运算源操作数1                   | 
     | id_reg2     |32           |Input            |译码阶段的指令要进行的运算源操作数2                   | 
     | id_wd       | 5           |Input            |译码阶段的指令要写入的目的寄存器地址                | 
+    | stall       |6            | Input           |流水线暂停控制信号  |
     | id_wreg     |1            |Output           |译码阶段的指令是否写入目的寄存器            | 
     | ex_aluop    |8            |Output           |执行阶段的指令要进行的运算子类型                  | 
     | ex_alusel   |3            |Output           |执行阶段的指令要进行的运算类型                          | 
@@ -151,12 +155,19 @@
     | wb_whilo_i  |1            |Input            |回写阶段的指令是否要写入HI、LO寄存器    | 
     | wb_hi_i     |32           |Input            |回写阶段的指令要写入HI寄存器的值          | 
     | wb_lo_i     |32           |Input            |回写阶段的指令要写入LO寄存器的值          | 
+    | div_result_i|64           |Input            |除法运算结果          | 
+    | div_ready_i |1            |Input            |除法运算是否结束          |
     | wd_o        |32           |Output           |执行阶段的指令要写入的目的寄存器地址        | 
     | wreg_o      |1            |Output           |执行阶段的指令是否要写入目的寄存器          | 
     | wdata_o     |32           |Output           |执行阶段的指令要写入目的寄存器的值          | 
     | whilo_o     |1            |Output           |执行阶段的指令是否要写入HI、LO寄存器        | 
     | hi_o        |32           |Output           |执行阶段的指令要写入HI寄存器的值            | 
     | lo_o        |32           |Output           |执行阶段的指令要写入LO寄存器的值            | 
+    | stallreq    |6            |Output           |执行阶段输出流水线暂停请求信号       |
+    | signed_div_o|1            |Output           |是否为有符号除法          | 
+    | div_opdata1_o|32          |Output           |被除数        | 
+    | div_opdata2_o|32          |Output           |除数            | 
+    | div_start_o  |1           |Output           |是否开始除法运算            | 
 
     - 纯组合逻辑，先进行子运算，再进行最终运算 
 
@@ -174,12 +185,17 @@
     | ex_whilo    |1            |Input            |执行阶段的指令是否要写入HI、LO寄存器               | 
     | ex_hi       |32           |Input            |执行阶段的指令要写入HI寄存器的值           | 
     | ex_lo       |32           |Input            |执行阶段的指令要写入LO寄存器的值             | 
+    | stall       |6            |Input            |流水线暂停控制信号  |
+    | hilo_i      |64           |Input            |保存的乘法结果             | 
+    | cnt_i       |2            |Input            |下一个时钟周期是执行阶段的第几个时钟周期  |
     | mem_wdata   |32           |Output           |访存阶段的指令得到的运算结果                          | 
     | mem_wd      | 5           |Output           |访存阶段的指令要写入的目的寄存器地址              | 
     | mem_wreg    |1            |Output           |访存阶段的指令是否写入目的寄存器       | 
     | mem_whilo   |1            |Output           |访存阶段的指令是否要写入HI、LO寄存器               | 
     | mem_hi      |32           |Output           |访存阶段的指令要写入HI寄存器的值           | 
     | mem_lo      |32           |Output           |访存阶段的指令要写入LO寄存器的值             | 
+    | hilo_o      |64           |Output           |保存的乘法结果             | 
+    | cnt_o       |2            |Output           |当前处于执行阶段的第几个时钟周期  |
     - 时钟缓冲作用 
 
 
@@ -219,6 +235,7 @@
     | mem_whilo   |1            |Input            |访存阶段的指令是否要写入HI、LO寄存器               | 
     | mem_hi      |32           |Input            |访存阶段的指令要写入HI寄存器的值           | 
     | mem_lo      |32           |Input            |访存阶段的指令要写入LO寄存器的值             | 
+    | stall       |6            | Input           |流水线暂停控制信号  |
     | wb_wdata    |32           |Output           |回写阶段的指令得到的运算结果                          | 
     | wb_wd       | 5           |Output           |回写阶段的指令要写入的目的寄存器地址              | 
     | wb_wreg     |1            |Output           |回写阶段的指令是否写入目的寄存器       | 
@@ -310,5 +327,65 @@
  
 - 修改后的模块接口说明已在上文中更改 
 
+## Chapter7 算术指令的实现
+- 随记： 
+    - 进行有符号数据计算时，寄存器中的数据当做补码处理 
+    - 有符号数据加减法：在不产生溢出的情况下，补码二进制数据直接计算的结果为计算结果的补码；对于有限位减法，结果等于加上被减数按位取反加一的值（无符号位补码）。
+    - 有符号数据乘法：结果由64位寄存器保存，不存在溢出问题，直接取两操作数的真值相乘，再根据操作数的符号判定结果的符号，进行对应修改。
+    - 除法：试商法，需要32个时钟周期，流程类似大除法竖式。
+- 流水线暂停
+    - 一些指令在执行阶段占用多个时钟周期，需要暂停流水线
+    - 增加CTRL模块，用于接收各阶段传递过来的暂停请求信号，发送流水线暂停控制信号。
+    - CTRL 接口 
+
+    | 接口名           | 宽度（bit） | Input/Output      | 作用                      | 
+    | -----------     | ----------- | -----------   | -----------               | 
+    | rst             | 1           |Input            |复位信号                    | 
+    | stallreq_from_id| 1           |Input            |处于译指阶段的指令是否请求流水线暂停                    | 
+    | stallreq_from_ex| 1           |Input            |处于执行阶段的指令是否请求流水线暂停      | 
+    | stall           | 6           |Output           |流水线暂停控制信号              | 
+
+- 除法模块DIV模块
+    - 接口 
+
+    | 接口名       | 宽度（bit） | Input/Output      | 作用                      | 
+    | ----------- | ----------- | -----------   | -----------               | 
+    | rst         | 1           |Input            |复位信号                    | 
+    | clk         |1            |Input            |时钟信号                    | 
+    | signed_div_i| 1           |Input            |是否为有符号除法               | 
+    | opdata1_i   |32           |Input            |被除数          | 
+    | opdata2_i   |32           |Input            |除数         | 
+    | start_i     | 1           |Input            |是否开始除法运算                    | 
+    | annul_i     |1            |Input            |是否去消除法运算            | 
+    | result_o    |64           |Output           |除法运算结果            | 
+    | ready_o     | 1           |Output           |除法运算是否结束              | 
+
+- 暂停、除法等导致的模块修改连线已在上文体现修改
+
+
 ## OpenMIPS指令及机器码 
 ![OpenMIPS指令及机器码](/pic/OpenMPIS_INST.jpg "OpenMIPS指令及机器码") 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

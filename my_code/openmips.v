@@ -72,12 +72,32 @@ wire reg2_read;
 wire[`RegBus] hi_o;
 wire[`RegBus] lo_o;
 
+// stall
+wire[5:0] stall;
+wire stallreq_from_id;	
+wire stallreq_from_ex;
+
+//连接执行阶段与ex_reg模块，用于多周期的MADD、MADDU、MSUB、MSUBU指令
+wire[`DoubleRegBus] hilo_temp_o;
+wire[1:0] cnt_o;
+
+wire[`DoubleRegBus] hilo_temp_i;
+wire[1:0] cnt_i;
+
+//div连接ex
+wire signed_div;
+wire[`RegBus] div_opdata1;
+wire[`RegBus] div_opdata2;
+wire div_start;
+wire[`DoubleRegBus] div_result;
+wire div_ready;
 
 assign rom_addr_o = pc;
 
 pc_reg u_pc_reg(
     .clk ( clk ),
     .rst ( rst ),
+    .stall(stall),
     .pc  ( pc  ),
     .ce  ( rom_ce_o  )
 );
@@ -87,6 +107,7 @@ if_id u_if_id(
     .rst     ( rst     ),
     .if_pc   ( pc   ),
     .if_inst ( rom_data_i ),
+    .stall   (stall),
     .id_pc   ( id_pc_i   ),
     .id_inst  ( id_inst_i  )
 );
@@ -113,8 +134,17 @@ id u_id(
     .reg1_o      ( id_reg1_o      ),
     .reg2_o      ( id_reg2_o      ),
     .wd_o        ( id_wd_o        ),
-    .wreg_o      ( id_wreg_o      )
+    .wreg_o      ( id_wreg_o      ),
+    .stallreq    ( stallreq_from_id)
 );
+
+ctrl u_ctrl(
+    .rst              ( rst              ),
+    .stallreq_from_id ( stallreq_from_id ),
+    .stallreq_from_ex ( stallreq_from_ex ),
+    .stall            ( stall            )
+);
+
 
 id_ex u_id_ex(
     .clk       ( clk       ),
@@ -125,6 +155,7 @@ id_ex u_id_ex(
     .id_reg2   ( id_reg2_o   ),
     .id_wd     ( id_wd_o     ),
     .id_wreg   ( id_wreg_o   ),
+    .stall     (stall        ),
     .ex_aluop  ( ex_aluop_i  ),
     .ex_alusel ( ex_alusel_i ),
     .ex_reg1   ( ex_reg1_i   ),
@@ -141,9 +172,6 @@ ex u_ex(
     .reg2_i   ( ex_reg2_i   ),
     .wd_i     ( ex_wd_i     ),
     .wreg_i   ( ex_wreg_i   ),
-    .wd_o     ( ex_wd_o     ),
-    .wreg_o   ( ex_wreg_o   ),
-    .wdata_o  ( ex_wdata_o  ),
     .hi_i        ( hi_o        ),
     .lo_i        ( lo_o        ),
     .mem_whilo_i ( mem_whilo_o ),
@@ -152,9 +180,25 @@ ex u_ex(
     .wb_whilo_i  ( wb_whilo_i  ),
     .wb_hi_i     ( wb_hi_i     ),
     .wb_lo_i     ( wb_lo_i     ),
+    .hilo_temp_i (hilo_temp_i),
+	.cnt_i       (cnt_i),
+    .div_result_i  ( div_result  ),
+    .div_ready_i   ( div_ready   ),
+
+    .wd_o     ( ex_wd_o     ),
+    .wreg_o   ( ex_wreg_o   ),
+    .wdata_o  ( ex_wdata_o  ),
     .whilo_o     ( ex_whilo_o     ),
     .hi_o        ( ex_hi_o        ),
-    .lo_o        ( ex_lo_o     )
+    .lo_o        ( ex_lo_o     ),
+    .stallreq    ( stallreq_from_ex),
+    .hilo_temp_o(hilo_temp_o),
+	.cnt_o      (cnt_o),
+    .signed_div_o  ( signed_div  ),
+    .div_start_o   ( div_start   ),
+    .div_opdata1_o ( div_opdata1 ),
+    .div_opdata2_o  ( div_opdata2  )
+
 );
 
 
@@ -167,13 +211,18 @@ ex_mem u_ex_mem(
     .ex_whilo  ( ex_whilo_o  ),
     .ex_hi     ( ex_hi_o     ),
     .ex_lo     ( ex_lo_o     ),
+    .stall     (stall        ),
+    .hilo_i    (hilo_temp_o),
+	.cnt_i     (cnt_o),	
 
     .mem_wd    ( mem_wd_i    ),
     .mem_wdata ( mem_wdata_i ),
     .mem_wreg  ( mem_wreg_i  ),
     .mem_whilo ( mem_whilo_i ),
     .mem_hi    ( mem_hi_i    ),
-    .mem_lo    ( mem_lo_i    )
+    .mem_lo    ( mem_lo_i    ),
+    .hilo_o    (hilo_temp_i),
+	.cnt_o     (cnt_i)
 );
 
 mem u_mem(
@@ -201,6 +250,7 @@ mem_wb u_mem_wb(
     .mem_whilo ( mem_whilo_o ),
     .mem_hi    ( mem_hi_o    ),
     .mem_lo    ( mem_lo_o    ),
+    .stall     (stall        ),
     .wb_wd     ( wb_wd_i     ),
     .wb_wreg   ( wb_wreg_i   ),
     .wb_wdata  ( wb_wdata_i  ),
@@ -233,6 +283,16 @@ hilo_reg u_hilo_reg(
     .lo_o  ( lo_o  )
 );
 
-
+div u_div(
+    .rst          ( rst          ),
+    .clk          ( clk          ),
+    .signed_div_i ( signed_div ),
+    .opdata1_i    ( div_opdata1    ),
+    .opdata2_i    ( div_opdata2  ),
+    .start_i      ( div_start  ),
+    .annul_i      ( 1'b0    ),
+    .result_o     ( div_result     ),
+    .ready_o      ( div_ready     )
+);
 
 endmodule
