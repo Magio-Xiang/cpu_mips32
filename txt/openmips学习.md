@@ -35,13 +35,15 @@
     - 给出指令地址
     - 接口 
 
-    | 接口名       | 宽度（bit） | Input/Output      | 作用             | 
-    | ----------- | ----------- | -----------   | -----------      | 
-    | rst         | 1           |Input            |复位信号           | 
-    | clk         |1            | Input           |时钟信号           |
-    | stall       |6            | Input           |流水线暂停控制信号  |  
-    | pc          |32           |Output           |要读取的指令地址    | 
-    | ce          |1            | Output          |指令存储器使能信号  | 
+    | 接口名                     | 宽度（bit） | Input/Output      | 作用             | 
+    | -----------               | ----------- | -----------   | -----------      | 
+    | rst                       | 1           |Input            |复位信号           | 
+    | clk                       |1            | Input           |时钟信号           |
+    | stall                     |6            | Input           |流水线暂停控制信号  |
+    | branch_flag_i             |1            | Input           |是否发生转移           |
+    | branch_target_address_i   |32           | Input           |转移到的目的地址  |      
+    | pc                        |32           |Output           |要读取的指令地址    | 
+    | ce                        |1            | Output          |指令存储器使能信号  | 
     - OpenMIPS按照字节寻址，一条指令对应4个字节，32位，每时钟周期PC自加4 
 
 - IF/ID模块
@@ -84,30 +86,36 @@
     - 对指令进行译码，得到运算类型、子类型、源操作数1和2、要写入的寄存器信息 
     - 接口 
 
-    | 接口名       | 宽度（bit） | Input/Output      | 作用                      | 
-    | ----------- | ----------- | -----------   | -----------               | 
-    | rst         | 1           |Input            |复位信号                    | 
-    | pc_i        |32           |Input            |指令地址                    | 
-    | inst_i      |32           |Input            |指令                        | 
-    | reg1_data_i |32           |Input            |第一个寄存器端口输入         | 
-    | reg2_data_i |32           |Input            |第二个寄存器端口输入         | 
-    | mem_wd_i    |5            |Input            |访存阶段的指令要写入的目的寄存器地址        | 
-    | mem_wreg_i  |1            |Input            |访存阶段的指令是否要写入目的寄存器          | 
-    | mem_wdata_i |32           |Input            |访存阶段的指令要写入目的寄存器的值          | 
-    | ex_wd_i     |5            |Input            |执行阶段的指令要写入的目的寄存器地址        | 
-    | ex_wreg_i   |1            |Input            |执行阶段的指令是否要写入目的寄存器          | 
-    | ex_wdata_i  |32           |Input            |执行阶段的指令要写入目的寄存器的值          | 
-    | reg1_read_o |1            |Output           |第一个寄存器读使能          | 
-    | reg2_read_o | 1           |Output           |第二个寄存器读使能           | 
-    | reg1_addr_o |5            |Output           |第一个寄存器地址            | 
-    | reg2_addr_o |5            |Output           |第二个寄存器地址            | 
-    | aluop_o     |8            |Output           |运算子类型                        | 
-    | alusel_o    |3            |Output           |运算类型           | 
-    | reg1_o      |32           |Output           |运算的源操作数1               | 
-    | reg2_o      |32           |Output           |运算的源操作数2             | 
-    | wd_o        |5            |Output           |输出结果要写入的目的寄存器地址   | 
-    | wreg_o      |1            |Output           |输出结果是否要写入目的寄存器       |  
-    | stallreq    |6            |Output           |译指阶段输出流水线暂停请求信号       | 
+    | 接口名                         | 宽度（bit） | Input/Output      | 作用                      | 
+    | -----------                   | ----------- | -----------   | -----------               | 
+    | rst                           | 1           |Input            |复位信号                    | 
+    | pc_i                          |32           |Input            |指令地址                    | 
+    | inst_i                        |32           |Input            |指令                        | 
+    | reg1_data_i                   |32           |Input            |第一个寄存器端口输入         | 
+    | reg2_data_i                   |32           |Input            |第二个寄存器端口输入         | 
+    | mem_wd_i                      |5            |Input            |访存阶段的指令要写入的目的寄存器地址        | 
+    | mem_wreg_i                    |1            |Input            |访存阶段的指令是否要写入目的寄存器          | 
+    | mem_wdata_i                   |32           |Input            |访存阶段的指令要写入目的寄存器的值          | 
+    | ex_wd_i                       |5            |Input            |执行阶段的指令要写入的目的寄存器地址        | 
+    | ex_wreg_i                     |1            |Input            |执行阶段的指令是否要写入目的寄存器          | 
+    | ex_wdata_i                    |32           |Input            |执行阶段的指令要写入目的寄存器的值          | 
+    | is_in_delayslot_i             |1            |Input            |当前处于译指阶段的指令是否位于延迟槽        | 
+    | reg1_read_o                   |1            |Output           |第一个寄存器读使能          | 
+    | reg2_read_o                   | 1           |Output           |第二个寄存器读使能           | 
+    | reg1_addr_o                   |5            |Output           |第一个寄存器地址            | 
+    | reg2_addr_o                   |5            |Output           |第二个寄存器地址            | 
+    | aluop_o                       |8            |Output           |运算子类型                        | 
+    | alusel_o                      |3            |Output           |运算类型           | 
+    | reg1_o                        |32           |Output           |运算的源操作数1               | 
+    | reg2_o                        |32           |Output           |运算的源操作数2             | 
+    | wd_o                          |5            |Output           |输出结果要写入的目的寄存器地址   | 
+    | wreg_o                        |1            |Output           |输出结果是否要写入目的寄存器       |  
+    | stallreq                      |6            |Output           |译指阶段输出流水线暂停请求信号       | 
+    |branch_flag_o                  |1            |Output           |是否发生转移               | 
+    |branch_target_address_o        |32           |Output           |转移到的目的地址            | 
+    |is_in_delayslot_o              |1            |Output           |当前处于译指阶段的指令是否位于延迟槽   | 
+    |link_addr_o                    |32           |Output           |转移指令要保存的返回地址   |  
+    |next_inst_in_delayslot_        |1            |Output           |下一条进入译指阶段的指令是否位于延迟槽       | 
     - 源操作数可以来自寄存器或者立即数 
     - 运算类型由两个参数决定，alusel_o决定运算类型包括逻辑运算、移位运算、算术运算等，aluop_o决定子类型，对逻辑运算而言包括或与非异或等 
 
@@ -115,59 +123,70 @@
     - 暂存译指阶段的运算类型、源操作数、目的寄存器信息，在下一个时钟传到执行阶段 
     - 接口 
 
-    | 接口名       | 宽度（bit） | Input/Output      | 作用                      | 
-    | ----------- | ----------- | -----------   | -----------               | 
-    | rst         | 1           |Input            |复位信号                    | 
-    | clk         |1            |Input            |时钟信号                    | 
-    | id_aluop    |8            |Input            |译码阶段的指令要进行的运算子类型                   | 
-    | id_alusel   |3            |Input            |译码阶段的指令要进行的运算类型                    | 
-    | id_reg1     |32           |Input            |译码阶段的指令要进行的运算源操作数1                   | 
-    | id_reg2     |32           |Input            |译码阶段的指令要进行的运算源操作数2                   | 
-    | id_wd       | 5           |Input            |译码阶段的指令要写入的目的寄存器地址                | 
-    | stall       |6            | Input           |流水线暂停控制信号  |
-    | id_wreg     |1            |Output           |译码阶段的指令是否写入目的寄存器            | 
-    | ex_aluop    |8            |Output           |执行阶段的指令要进行的运算子类型                  | 
-    | ex_alusel   |3            |Output           |执行阶段的指令要进行的运算类型                          | 
-    | ex_reg1     |32           |Output           |执行阶段的指令要进行的运算源操作数1          | 
-    | ex_reg2     |32           |Output           |执行阶段的指令要进行的运算源操作数2                     | 
-    | ex_wd       | 5           |Output           |执行阶段的指令要写入的目的寄存器地址              | 
-    | ex_wreg     |1            |Output           |执行阶段的指令是否写入目的寄存器       | 
+    | 接口名                      | 宽度（bit） | Input/Output      | 作用                      | 
+    | -----------                | ----------- | -----------   | -----------               | 
+    | rst                        | 1           |Input            |复位信号                    | 
+    | clk                        |1            |Input            |时钟信号                    | 
+    | id_aluop                   |8            |Input            |译码阶段的指令要进行的运算子类型                   | 
+    | id_alusel                  |3            |Input            |译码阶段的指令要进行的运算类型                    | 
+    | id_reg1                    |32           |Input            |译码阶段的指令要进行的运算源操作数1                   | 
+    | id_reg2                    |32           |Input            |译码阶段的指令要进行的运算源操作数2                   | 
+    | id_wd                      | 5           |Input            |译码阶段的指令要写入的目的寄存器地址                |
+    | id_reg1                    |32           |Input            |译码阶段的指令要进行的运算源操作数1                   | 
+    | id_reg2                    |32           |Input            |译码阶段的指令要进行的运算源操作数2                   | 
+    | id_wd                      | 5           |Input            |译码阶段的指令要写入的目的寄存器地址                |  
+    | stall                      |6            |Input            |流水线暂停控制信号  |
+    | id_link_address            |32           |Input            |处于译指阶段的转移指令要保存的返回地址                   | 
+    | id_is_in_delayslot         | 1           |Input            |处于译指阶段的指令是否位于延迟槽              |  
+    | next_inst_in_delayslot_i   |1            |Input            |下一条进入译指阶段的指令是否位于延迟槽|
+    | id_wreg                    |1            |Output           |译码阶段的指令是否写入目的寄存器            | 
+    | ex_aluop                   |8            |Output           |执行阶段的指令要进行的运算子类型                  | 
+    | ex_alusel                  |3            |Output           |执行阶段的指令要进行的运算类型                          | 
+    | ex_reg1                    |32           |Output           |执行阶段的指令要进行的运算源操作数1          | 
+    | ex_reg2                    |32           |Output           |执行阶段的指令要进行的运算源操作数2                     | 
+    | ex_wd                      | 5           |Output           |执行阶段的指令要写入的目的寄存器地址              | 
+    | ex_wreg                    |1            |Output           |执行阶段的指令是否写入目的寄存器       | 
+    | ex_link_address            |32           |Output           |处于执行阶段的转移指令要保存的返回地址                   | 
+    | ex_is_in_delayslot         | 5           |Output           |处于执行阶段的指令是否位于延迟槽              |  
+    | is_in_delayslot_o          |1            |Output           |当前处于译指阶段的指令是否位于延迟槽|
     - 时钟缓冲作用 
 
 - EX模块 
     - 对源操作数1、2进行指定运算 
     - 接口 
 
-    | 接口名       | 宽度（bit） | Input/Output      | 作用                      | 
-    | ----------- | ----------- | -----------   | -----------               | 
-    | rst         | 1           |Input            |复位信号                    | 
-    | alusel_i    |3            |Input            |运算类型                    | 
-    | aluop_i     |8            |Input            |运算子类型                    | 
-    | reg1_i      |32           |Input            |源操作数1                   | 
-    | reg2_i      |32           |Input            |源操作数2                   | 
-    | wd_i        |5            |Input            |要写入的目的寄存器地址        | 
-    | wreg_i      | 1           |Input            |是否要写入目的寄存器          | 
-    | hi_i        |32           |Input            |HILO模块给出的HI寄存器的值           | 
-    | lo_i        |32           |Input            |HILO模块给出的LO寄存器的值            | 
-    | mem_whilo_i |1            |Input            |访存阶段的指令是否要写入HI、LO寄存器                 | 
-    | mem_hi_i    |32           |Input            |访存阶段的指令要写入HI寄存器的值                    | 
-    | mem_lo_i    |32           |Input            |访存阶段的指令要写入LO寄存器的值                  | 
-    | wb_whilo_i  |1            |Input            |回写阶段的指令是否要写入HI、LO寄存器    | 
-    | wb_hi_i     |32           |Input            |回写阶段的指令要写入HI寄存器的值          | 
-    | wb_lo_i     |32           |Input            |回写阶段的指令要写入LO寄存器的值          | 
-    | div_result_i|64           |Input            |除法运算结果          | 
-    | div_ready_i |1            |Input            |除法运算是否结束          |
-    | wd_o        |32           |Output           |执行阶段的指令要写入的目的寄存器地址        | 
-    | wreg_o      |1            |Output           |执行阶段的指令是否要写入目的寄存器          | 
-    | wdata_o     |32           |Output           |执行阶段的指令要写入目的寄存器的值          | 
-    | whilo_o     |1            |Output           |执行阶段的指令是否要写入HI、LO寄存器        | 
-    | hi_o        |32           |Output           |执行阶段的指令要写入HI寄存器的值            | 
-    | lo_o        |32           |Output           |执行阶段的指令要写入LO寄存器的值            | 
-    | stallreq    |6            |Output           |执行阶段输出流水线暂停请求信号       |
-    | signed_div_o|1            |Output           |是否为有符号除法          | 
-    | div_opdata1_o|32          |Output           |被除数        | 
-    | div_opdata2_o|32          |Output           |除数            | 
-    | div_start_o  |1           |Output           |是否开始除法运算            | 
+    | 接口名                             | 宽度（bit） | Input/Output      | 作用                      | 
+    | -----------                       | ----------- | -----------   | -----------               | 
+    | rst                               | 1           |Input            |复位信号                    | 
+    | alusel_i                          |3            |Input            |运算类型                    | 
+    | aluop_i                           |8            |Input            |运算子类型                    | 
+    | reg1_i                            |32           |Input            |源操作数1                   | 
+    | reg2_i                            |32           |Input            |源操作数2                   | 
+    | wd_i                              |5            |Input            |要写入的目的寄存器地址        | 
+    | wreg_i                            | 1           |Input            |是否要写入目的寄存器          | 
+    | hi_i                              |32           |Input            |HILO模块给出的HI寄存器的值           | 
+    | lo_i                              |32           |Input            |HILO模块给出的LO寄存器的值            | 
+    | mem_whilo_i                       |1            |Input            |访存阶段的指令是否要写入HI、LO寄存器                 | 
+    | mem_hi_i                          |32           |Input            |访存阶段的指令要写入HI寄存器的值                    | 
+    | mem_lo_i                          |32           |Input            |访存阶段的指令要写入LO寄存器的值                  | 
+    | wb_whilo_i                        |1            |Input            |回写阶段的指令是否要写入HI、LO寄存器    | 
+    | wb_hi_i                           |32           |Input            |回写阶段的指令要写入HI寄存器的值          | 
+    | wb_lo_i                           |32           |Input            |回写阶段的指令要写入LO寄存器的值          | 
+    | div_result_i                      |64           |Input            |除法运算结果          | 
+    | div_ready_i                       |1            |Input            |除法运算是否结束          |
+    | link_address_i                    |32           |Input            |处于执行阶段的转移指令要保存的返回地址                   | 
+    | is_in_delayslot_i                 | 1           |Input            |处于执行阶段的指令是否位于延迟槽              |  
+    | wd_o                              |32           |Output           |执行阶段的指令要写入的目的寄存器地址        | 
+    | wreg_o                            |1            |Output           |执行阶段的指令是否要写入目的寄存器          | 
+    | wdata_o                           |32           |Output           |执行阶段的指令要写入目的寄存器的值          | 
+    | whilo_o                           |1            |Output           |执行阶段的指令是否要写入HI、LO寄存器        | 
+    | hi_o                              |32           |Output           |执行阶段的指令要写入HI寄存器的值            | 
+    | lo_o                              |32           |Output           |执行阶段的指令要写入LO寄存器的值            | 
+    | stallreq                          |6            |Output           |执行阶段输出流水线暂停请求信号       |
+    | signed_div_o                      |1            |Output           |是否为有符号除法          | 
+    | div_opdata1_o                     |32           |Output           |被除数        | 
+    | div_opdata2_o                     |32           |Output           |除数            | 
+    | div_start_o                       |1            |Output           |是否开始除法运算            | 
 
     - 纯组合逻辑，先进行子运算，再进行最终运算 
 
@@ -361,6 +380,15 @@
     | ready_o     | 1           |Output           |除法运算是否结束              | 
 
 - 暂停、除法等导致的模块修改连线已在上文体现修改
+
+
+## Chapter8 转移指令的实现
+- 控制相关：流水线中的转移指令或者其他需要改写PC的指令造成的相关。这些指令改写了PC的值，导致后面已经进入流水线的几条指令无效。
+    - 如果在执行阶段进行转移判断，取指和译指阶段的指令无效，浪费两个时钟周期
+    - 延迟槽：规定转移指令后面的指令位置为延迟槽，延迟槽中的指令成为延迟指令。延迟指令总被执行，与转移是否发生没有关系。
+    - 在译指时进行判断转移，延迟槽中会有一个延迟指令
+- 译指阶段需要把指令转移信息返送给取指阶段。
+- 转移指令导致的模块修改连线已在上文体现修改
 
 
 ## OpenMIPS指令及机器码 
