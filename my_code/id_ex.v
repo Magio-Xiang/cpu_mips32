@@ -15,7 +15,7 @@ module id_ex (
   
   input wire[`RegBus] id_link_address,
   input wire id_is_in_delayslot,
-  input wire is_in_delayslot_i,
+  input wire next_inst_in_delayslot_i,
 
   output reg[`AluOpBus] ex_aluop,
   output reg[`AluSelBus] ex_alusel,
@@ -59,7 +59,7 @@ module id_ex (
             ex_wreg<=id_wreg;
             ex_link_address<=id_link_address;
             ex_is_in_delayslot<=id_is_in_delayslot;
-            is_in_delayslot_o<=is_in_delayslot_i;
+            is_in_delayslot_o<=next_inst_in_delayslot_i;
         end
     end
 
