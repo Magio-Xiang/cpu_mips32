@@ -24,6 +24,7 @@ module ex (
 
     input wire is_in_delayslot_i,
     input wire[`RegBus] link_address_i,
+    input wire[`RegBus] inst_i,
 
     output reg whilo_o,
     output reg[`RegBus] hi_o,
@@ -39,7 +40,10 @@ module ex (
     output reg signed_div_o,
     output reg div_start_o,
     output reg[`RegBus] div_opdata1_o,
-    output reg[`RegBus] div_opdata2_o   
+    output reg[`RegBus] div_opdata2_o,
+    output wire[`AluOpBus] aluop_o,
+    output wire[`RegBus] mem_addr_o,
+    output wire[`RegBus] reg2_o   
 );
     reg[`RegBus] logicout;
     reg[`RegBus] shiftres;
@@ -61,7 +65,13 @@ module ex (
     reg[`DoubleRegBus] hilo_temp1;
     reg stallreq_for_madd_msub;
     reg stallreq_for_div;
+    //***************************访存阶段数据准备***************************************//
+    assign aluop_o=aluop_i;
+    assign mem_addr_o= reg1_i+{{16{inst_i[15]}},inst_i[15:0]};
+    assign reg2_o=reg2_i;
 
+
+    //*********************************************************************************//
     //***************************算术运算*******************************************//
     //计算操作数准备
     assign reg2_i_mux = ((aluop_i==`EXE_SUB_OP)||
