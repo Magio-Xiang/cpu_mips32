@@ -18,6 +18,8 @@ module id (
 
     input wire is_in_delayslot_i,
 
+    input wire[`AluOpBus] ex_aluop_i,
+
     output reg reg1_read_o,
     output reg reg2_read_o,
     output reg[`RegAddrBus] reg1_addr_o,
@@ -48,16 +50,28 @@ wire[4:0] op4= inst_i[20:16];
 wire[`RegBus] pc_plus_8;
 wire[`RegBus] pc_plus_4;
 wire[`RegBus] imm_sll2_signedext;
+wire pre_inst_is_load;
 
 reg[`RegBus]	imm;
 reg instvalid;
+reg stallreq_for_reg1_loadrelate;
+reg stallreq_for_reg2_loadrelate;
 
-
-assign stallreq = `NoStop;
+assign stallreq = stallreq_for_reg1_loadrelate||stallreq_for_reg2_loadrelate;
 assign pc_plus_8 = pc_i + 8;
 assign pc_plus_4 = pc_i + 4;
 assign imm_sll2_signedext = {{14{inst_i[15]}},inst_i[15:0],2'b00};
 assign inst_o=inst_i;
+assign pre_inst_is_load =((ex_aluop_i==`EXE_LB_OP)||
+                            (ex_aluop_i==`EXE_LBU_OP)||
+                            (ex_aluop_i==`EXE_LH_OP)||
+                            (ex_aluop_i==`EXE_LHU_OP)||
+                            (ex_aluop_i==`EXE_LW_OP)||
+                            (ex_aluop_i==`EXE_LWR_OP)||
+                            (ex_aluop_i==`EXE_LWL_OP)||
+                            (ex_aluop_i==`EXE_LL_OP)||
+                            (ex_aluop_i==`EXE_SC_OP)) ? 1'b1:1'b0;
+
 
 
 always @(*) begin
@@ -726,6 +740,24 @@ always @(*) begin
                 reg2_read_o<=`ReadEnable;
                 instvalid<=`InstValid;
             end
+            `EXE_LL:begin
+                wreg_o<=`WriteEnable;
+                aluop_o<=`EXE_LL_OP;
+                alusel_o<=`EXE_RES_LOAD_STORE;
+                reg1_read_o<=`ReadEnable;
+                reg2_read_o<=`ReadDisable;
+                wd_o<=inst_i[20:16];
+                instvalid<=`InstValid;
+            end
+            `EXE_SC:begin
+                wreg_o<=`WriteEnable;
+                aluop_o<=`EXE_SC_OP;
+                alusel_o<=`EXE_RES_LOAD_STORE;
+                reg1_read_o<=`ReadEnable;
+                reg2_read_o<=`ReadEnable;
+                wd_o<=inst_i[20:16];
+                instvalid<=`InstValid;
+            end
 
             default:begin              
             end 
@@ -770,8 +802,11 @@ always @(*) begin
 end
 
 always @(*) begin
+    stallreq_for_reg1_loadrelate<=`NoStop;
     if(rst==`RstEnable) begin
         reg1_o<=`ZeroWord;
+    end else if (pre_inst_is_load == 1'b1 && ex_wd_i == reg1_addr_o && reg1_addr_o==1'b1) begin
+        stallreq_for_reg1_loadrelate<=`Stop;
     end else if ((reg1_read_o==`ReadEnable)&&(ex_wreg_i==`WriteEnable)&&(reg1_addr_o==ex_wd_i)) begin
         reg1_o<=ex_wdata_i;
     end else if ((reg1_read_o==`ReadEnable)&&(mem_wreg_i==`WriteEnable)&&(reg1_addr_o==mem_wd_i)) begin
@@ -786,8 +821,11 @@ always @(*) begin
 end
 
 always @(*) begin
+    stallreq_for_reg2_loadrelate<=`NoStop;
     if(rst==`RstEnable) begin
         reg2_o<=`ZeroWord;
+    end else if (pre_inst_is_load == 1'b1 && ex_wd_i == reg2_addr_o && reg2_addr_o==1'b1) begin
+        stallreq_for_reg2_loadrelate<=`Stop;
     end else if ((reg2_read_o==`ReadEnable)&&(ex_wreg_i==`WriteEnable)&&(reg2_addr_o==ex_wd_i)) begin
         reg2_o<=ex_wdata_i;
     end else if ((reg2_read_o==`ReadEnable)&&(mem_wreg_i==`WriteEnable)&&(reg2_addr_o==mem_wd_i)) begin
