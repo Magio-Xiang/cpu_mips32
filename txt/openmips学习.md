@@ -115,7 +115,8 @@
     |branch_target_address_o        |32           |Output           |转移到的目的地址            | 
     |is_in_delayslot_o              |1            |Output           |当前处于译指阶段的指令是否位于延迟槽   | 
     |link_addr_o                    |32           |Output           |转移指令要保存的返回地址   |  
-    |next_inst_in_delayslot_        |1            |Output           |下一条进入译指阶段的指令是否位于延迟槽       | 
+    |next_inst_in_delayslot_o       |1            |Output           |下一条进入译指阶段的指令是否位于延迟槽       | 
+    |inst_o                         |32           |Output           |当前处于译码阶段的指令       | 
     - 源操作数可以来自寄存器或者立即数 
     - 运算类型由两个参数决定，alusel_o决定运算类型包括逻辑运算、移位运算、算术运算等，aluop_o决定子类型，对逻辑运算而言包括或与非异或等 
 
@@ -139,6 +140,7 @@
     | id_link_address            |32           |Input            |处于译指阶段的转移指令要保存的返回地址                   | 
     | id_is_in_delayslot         | 1           |Input            |处于译指阶段的指令是否位于延迟槽              |  
     | next_inst_in_delayslot_i   |1            |Input            |下一条进入译指阶段的指令是否位于延迟槽|
+    | id_inst                    |32           |Input            |当前处于译码阶段的指令|
     | id_wreg                    |1            |Output           |译码阶段的指令是否写入目的寄存器            | 
     | ex_aluop                   |8            |Output           |执行阶段的指令要进行的运算子类型                  | 
     | ex_alusel                  |3            |Output           |执行阶段的指令要进行的运算类型                          | 
@@ -149,6 +151,7 @@
     | ex_link_address            |32           |Output           |处于执行阶段的转移指令要保存的返回地址                   | 
     | ex_is_in_delayslot         | 5           |Output           |处于执行阶段的指令是否位于延迟槽              |  
     | is_in_delayslot_o          |1            |Output           |当前处于译指阶段的指令是否位于延迟槽|
+    | ex_inst                    |32           |Output           |当前处于执行阶段的指令|
     - 时钟缓冲作用 
 
 - EX模块 
@@ -174,8 +177,9 @@
     | wb_lo_i                           |32           |Input            |回写阶段的指令要写入LO寄存器的值          | 
     | div_result_i                      |64           |Input            |除法运算结果          | 
     | div_ready_i                       |1            |Input            |除法运算是否结束          |
-    | link_address_i                    |32           |Input            |处于执行阶段的转移指令要保存的返回地址                   | 
+    | link_address_i                    |32           |Input            |处于执行阶段的转移指令要保存的返回地址      | 
     | is_in_delayslot_i                 | 1           |Input            |处于执行阶段的指令是否位于延迟槽              |  
+    | inst_i                            |32           |Input            |当前处于执行阶段的指令          |
     | wd_o                              |32           |Output           |执行阶段的指令要写入的目的寄存器地址        | 
     | wreg_o                            |1            |Output           |执行阶段的指令是否要写入目的寄存器          | 
     | wdata_o                           |32           |Output           |执行阶段的指令要写入目的寄存器的值          | 
@@ -187,6 +191,9 @@
     | div_opdata1_o                     |32           |Output           |被除数        | 
     | div_opdata2_o                     |32           |Output           |除数            | 
     | div_start_o                       |1            |Output           |是否开始除法运算            | 
+    | aluop_o                           |8            |Output           |执行阶段要进行的运算子类型        | 
+    | mem_addr_o                        |32           |Output           |加载、存储指令对应的存储器地址| 
+    | reg2_o                            |32           |Output           |存储指令要存储的数据、或lwl、lwr指令要加载到目的寄存器的原始值| 
 
     - 纯组合逻辑，先进行子运算，再进行最终运算 
 
@@ -207,6 +214,9 @@
     | stall       |6            |Input            |流水线暂停控制信号  |
     | hilo_i      |64           |Input            |保存的乘法结果             | 
     | cnt_i       |2            |Input            |下一个时钟周期是执行阶段的第几个时钟周期  |
+    | ex_aluop    |8            |Input            |执行阶段要进行的运算子类型        | 
+    | ex_mem_addr |32           |Input            |加载、存储指令对应的存储器地址| 
+    | ex_reg2     |32           |Input            |存储指令要存储的数据、或lwl、lwr指令要加载到目的寄存器的原始值| 
     | mem_wdata   |32           |Output           |访存阶段的指令得到的运算结果                          | 
     | mem_wd      | 5           |Output           |访存阶段的指令要写入的目的寄存器地址              | 
     | mem_wreg    |1            |Output           |访存阶段的指令是否写入目的寄存器       | 
@@ -215,6 +225,9 @@
     | mem_lo      |32           |Output           |访存阶段的指令要写入LO寄存器的值             | 
     | hilo_o      |64           |Output           |保存的乘法结果             | 
     | cnt_o       |2            |Output           |当前处于执行阶段的第几个时钟周期  |
+    | mem_aluop   |8            |Output           |访存阶段要进行的运算子类型        | 
+    | mem_mem_addr|32           |Output           |访存阶段加载、存储指令对应的存储器地址| 
+    | mem_reg2    |32           |Output           |访存阶段的指令要存储的数据、或lwl、lwr指令要加载到目的寄存器的原始值| 
     - 时钟缓冲作用 
 
 
@@ -231,12 +244,28 @@
     | whilo_i     |1            |Input            |访存阶段的指令最终是否要写入HI、LO寄存器               | 
     | hi_i        |32           |Input            |访存阶段的指令最终要写入HI寄存器的值           | 
     | lo_i        |32           |Input            |访存阶段的指令最终要写入LO寄存器的值             | 
+    | aluop_i     |8            |Input            |访存阶段要进行的运算子类型        | 
+    | mem_addr_i  |32           |Input            |访存阶段加载、存储指令对应的存储器地址| 
+    | reg2_i      |32           |Input            |访存阶段存储指令要存储的数据、或lwl、lwr指令要加载到目的寄存器的原始值| 
+    | mem_data_i  |32           |Input            |从数据存储器读取的数据 | 
+    | LLbit_i     |1            |Input            |LLbit寄存器的值| 
+    | wb_LLbit_we_i|1           |Input            |回写阶段的指令是否要写LLbit寄存器| 
+    | wb_LLbit_value_i|1        |Input            |回写阶段的指令要写入LLBIt寄存器的值 | 
     | wd_o        |5            |Output           |访存阶段的指令最终要写入的目的寄存器地址        | 
     | wreg_o      |1            |Output           |访存阶段的指令最终是否要写入目的寄存器          | 
     | wdata_o     |32           |Output           |访存阶段的指令最终要写入目的寄存器的值          | 
     | whilo_o     |1            |Output           |访存阶段的指令最终是否要写入HI、LO寄存器               | 
     | hi_o        |32           |Output           |访存阶段的指令最终要写入HI寄存器的值           | 
-    | lo_o        |32           |Output           |访存阶段的指令最终要写入LO寄存器的值             | 
+    | lo_o        |32           |Output           |访存阶段的指令最终要写入LO寄存器的值             |
+    | mem_addr_o  |32           |Output           |要访问的数据存储器的地址          | 
+    | mem_we_o    |1            |Output           |是否进行写操作          | 
+    | mem_sel_o   |4            |Output           |字节选择信号               | 
+    | mem_data_o  |32           |Output           |要写入数据存储器的数据          | 
+    | mem_ce_o    |1            |Output           |数据存储器使能信号             |
+    | LLbit_we_o  |1            |Output           |访存阶段的指令是否要写LLbit寄存器| 
+    | LLbit_value_o|1           |Output           |访存阶段的指令要写入LLBIt寄存器的值 | 
+
+
 
     - 目前ori指令本阶段不需要执行操作，简单传递 
 
@@ -255,12 +284,16 @@
     | mem_hi      |32           |Input            |访存阶段的指令要写入HI寄存器的值           | 
     | mem_lo      |32           |Input            |访存阶段的指令要写入LO寄存器的值             | 
     | stall       |6            | Input           |流水线暂停控制信号  |
+    | mem_LLbit_we    |1        |Intput           |访存阶段的指令是否要写LLbit寄存器| 
+    | mem_LLbit_value |1        |Intput           |访存阶段的指令要写入LLBIt寄存器的值 | 
     | wb_wdata    |32           |Output           |回写阶段的指令得到的运算结果                          | 
     | wb_wd       | 5           |Output           |回写阶段的指令要写入的目的寄存器地址              | 
     | wb_wreg     |1            |Output           |回写阶段的指令是否写入目的寄存器       | 
     | wb_whilo    |1            |Output           |回写阶段的指令是否要写入HI、LO寄存器               | 
     | wb_hi       |32           |Output           |回写阶段的指令要写入HI寄存器的值           | 
     | wb_lo       |32           |Output           |回写阶段的指令要写入LO寄存器的值             | 
+    | wb_LLbit_we   |1          |Output           |回写阶段的指令是否要写LLbit寄存器| 
+    | wb_LLbit_value|1          |Output           |回写阶段的指令要写入LLBIt寄存器的值 | 
     - 时钟缓冲作用 
 
 - MIPS编译环境建立 
@@ -390,6 +423,26 @@
 - 译指阶段需要把指令转移信息返送给取指阶段。
 - 转移指令导致的模块修改连线已在上文体现修改
 
+## Chapter9 加载存储指令的实现
+- 加载和存储：mips的寄存器和ram内存之间的数据交互。
+- 数据位数：字节byte、半字hb、字word。半字和字一般要求地址对齐
+- openmips 字节寻址，大端模式，数据高位保存在存储器低位。
+- lwl&lwr、swl&swr指令配合可以从非对齐地址加载、存储字
+- load造成的数据相关：读写相差超过一个时钟周期，不能用数据前推实现，需要stall
+- RMW（Read-Modif—Write）：在多线程系统中，需要RMW操作序列保证对某个资源的独占性。读取内存中某个地址中的数据、读取的数据经过修改，再保存回内存原地址，这个过程不能有任何打扰，因此需要建立一个临界区域（Critical Region），临界区域中完成的操作成为原子操作，原子操作不被打扰。操作系统建立临界区域的方式成为信号量机制。
+- mips采用链接加载指令ll、条件存储指令sc实现信号量机制。使用链接状态位寄存器LLbit_reg存储链接状态，置1表示发生链接加载操作，受到干扰后会置0。执行sc指令时，会检查llbit，为1则RMW序列未受干扰，sc正常执行写回操作，并设置一个通用寄存器为1；反之不写回，并设置一个通用寄存器为0，表示失败
+- 加载存储指令导致的模块修改连线已在上文体现修改
+- LLbit_reg模块
+    - 接口 
+
+    | 接口名       | 宽度（bit） | Input/Output      | 作用                      | 
+    | ----------- | ----------- | -----------   | -----------               | 
+    | rst         | 1           |Input            |复位信号                    | 
+    | clk         |1            |Input            |时钟信号                    | 
+    | flush       | 1           |Input            |是否有异常发生               | 
+    | we          |1            |Input            |是否要写LLbit寄存器          | 
+    | LLbit_i     | 1           |Input            |要写到LLbit寄存器的值                 | 
+    | LLbit_o     |1            |Output           |LLbit寄存器的值        | 
 
 ## OpenMIPS指令及机器码 
 ![OpenMIPS指令及机器码](/pic/OpenMPIS_INST.jpg "OpenMIPS指令及机器码") 
