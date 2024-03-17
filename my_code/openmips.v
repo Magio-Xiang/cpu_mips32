@@ -67,6 +67,9 @@ wire[`RegBus] mem_lo_i;
 wire[`AluOpBus] mem_aluop_i;
 wire[`RegBus] mem_mem_addr_i;
 wire[`RegBus] mem_reg2_i;
+wire mem_LLbit_i;
+wire mem_wb_LLbit_we_i;
+wire mem_wb_LLbit_value_i;
 
 wire[`RegAddrBus] mem_wd_o;
 wire[`RegBus] mem_wdata_o;
@@ -74,6 +77,8 @@ wire mem_wreg_o;
 wire mem_whilo_o;
 wire[`RegBus] mem_hi_o;
 wire[`RegBus] mem_lo_o;
+wire mem_LLbit_we_o;
+wire mem_LLbit_value_o;
 
 //wb
 wire[`RegAddrBus] wb_wd_i;
@@ -115,6 +120,8 @@ wire div_start;
 wire[`DoubleRegBus] div_result;
 wire div_ready;
 
+wire flush;
+
 assign rom_addr_o = pc;
 
 pc_reg u_pc_reg(
@@ -150,6 +157,7 @@ id u_id(
     .ex_wd_i     ( ex_wd_o     ),
     .ex_wreg_i   ( ex_wreg_o   ),
     .is_in_delayslot_i(id_is_in_delayslot_i),
+    .ex_aluop_i(ex_aluop_o),
 
     .reg1_read_o ( reg1_read ),
     .reg2_read_o ( reg2_read ),
@@ -292,6 +300,9 @@ mem u_mem(
     .mem_addr_i(mem_mem_addr_i),
     .reg2_i(mem_reg2_i),
     .mem_data_i(ram_data_i),
+    .LLbit_i(mem_LLbit_i),
+    .wb_LLbit_we_i(mem_wb_LLbit_we_i),
+    .wb_LLbit_value_i(mem_wb_LLbit_value_i),
 
     .wd_o    ( mem_wd_o    ),
     .wdata_o ( mem_wdata_o ),
@@ -303,7 +314,9 @@ mem u_mem(
     .mem_we_o(ram_we_o),
     .mem_sel_o(ram_sel_o),
     .mem_data_o(ram_data_o),
-    .mem_ce_o(ram_ce_o)
+    .mem_ce_o(ram_ce_o),
+    .LLbit_we_o(mem_LLbit_we_o),
+    .LLbit_value_o(mem_LLbit_value_o)
 );
 
 mem_wb u_mem_wb(
@@ -316,12 +329,17 @@ mem_wb u_mem_wb(
     .mem_hi    ( mem_hi_o    ),
     .mem_lo    ( mem_lo_o    ),
     .stall     (stall        ),
+    .mem_LLbit_we(mem_LLbit_we_o),
+    .mem_LLbit_value(mem_LLbit_value_o),
+
     .wb_wd     ( wb_wd_i     ),
     .wb_wreg   ( wb_wreg_i   ),
     .wb_wdata  ( wb_wdata_i  ),
     .wb_whilo  ( wb_whilo_i  ),
     .wb_hi     ( wb_hi_i     ),
-    .wb_lo     ( wb_lo_i     )
+    .wb_lo     ( wb_lo_i     ),
+    .wb_LLbit_we(mem_wb_LLbit_we_i),
+    .wb_LLbit_value(mem_wb_LLbit_value_i)
 );
 
 regfile u_regfile(
@@ -359,5 +377,15 @@ div u_div(
     .result_o     ( div_result     ),
     .ready_o      ( div_ready     )
 );
+
+LLbit_reg u_LLbit_reg(
+    .clk     ( clk     ),
+    .rst     ( rst     ),
+    .flush   ( flush   ),
+    .we      ( mem_wb_LLbit_we_i      ),
+    .LLbit_i ( mem_wb_LLbit_value_i ),
+    .LLbit_o  ( mem_LLbit_i  )
+);
+
 
 endmodule
