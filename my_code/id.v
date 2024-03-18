@@ -798,6 +798,25 @@ always @(*) begin
                 end 
             endcase    
         end
+        if (inst_i[31:21] == 11'b0100_0000_000 &&
+            inst_i[10:0]  == 11'b0000_0000_000) begin
+            aluop_o<=`EXE_MFC0_OP;
+            alusel_o<=`EXE_RES_MOVE;
+            reg1_read_o<=`ReadDisable;
+            reg2_read_o<=`ReadDisable;
+            wreg_o<=`WriteEnable;
+            wd_o<=inst_i[20:16];
+            instvalid<=`InstValid;
+        end else if (inst_i[31:21] == 11'b0100_0000_100 &&
+                    inst_i[10:0]  == 11'b0000_0000_000) begin
+            aluop_o<=`EXE_MTC0_OP;
+            alusel_o<=`EXE_RES_NOP;
+            reg1_read_o<=`ReadEnable;
+            reg1_addr_o<=inst_i[20:16];
+            reg2_read_o<=`ReadDisable;
+            wreg_o<=`WriteDisable;
+            instvalid<=`InstValid;
+        end
     end
 end
 
