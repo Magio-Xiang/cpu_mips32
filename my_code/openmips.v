@@ -12,7 +12,10 @@ module openmips (
     output wire[`RegBus] ram_data_o,
     output wire ram_we_o,
     output wire[3:0] ram_sel_o,
-    output wire ram_ce_o
+    output wire ram_ce_o,
+
+    input wire[5:0]                int_i,
+    output wire                    timer_int_o
 );
 
 //if
@@ -46,6 +49,14 @@ wire ex_wreg_i;
 wire ex_is_in_delayslot_i;
 wire[`RegBus] ex_link_address_i;
 wire[`RegBus] ex_inst_i;
+wire[`RegBus] ex_cp0_reg_data_i;
+wire              ex_mem_cp0_reg_we_i;
+wire[`RegBus]     ex_mem_cp0_reg_data_i;
+wire[`RegAddrBus] ex_mem_cp0_reg_write_addr_i;
+wire              ex_wb_cp0_reg_we_i;
+wire[`RegBus]     ex_wb_cp0_reg_data_i;
+wire[`RegAddrBus] ex_wb_cp0_reg_write_addr_i;
+
 
 wire[`RegAddrBus] ex_wd_o;
 wire[`RegBus] ex_wdata_o;
@@ -56,6 +67,11 @@ wire[`RegBus] ex_lo_o;
 wire[`AluOpBus] ex_aluop_o;
 wire[`RegBus] ex_mem_addr_o;
 wire[`RegBus] ex_reg2_o;
+
+wire ex_cp0_reg_we_o;
+wire[`RegAddrBus] ex_cp0_reg_write_addr_o;
+wire[`RegAddrBus] ex_cp0_reg_read_addr_o;
+wire[`RegBus] ex_cp0_reg_data_o;
 
 //mem
 wire[`RegAddrBus] mem_wd_i;
@@ -70,6 +86,9 @@ wire[`RegBus] mem_reg2_i;
 wire mem_LLbit_i;
 wire mem_wb_LLbit_we_i;
 wire mem_wb_LLbit_value_i;
+wire mem_cp0_reg_we_i;
+wire[`RegAddrBus] mem_cp0_reg_write_addr_i;
+wire[`RegBus] mem_cp0_reg_data_i;
 
 wire[`RegAddrBus] mem_wd_o;
 wire[`RegBus] mem_wdata_o;
@@ -121,6 +140,9 @@ wire[`DoubleRegBus] div_result;
 wire div_ready;
 
 wire flush;
+
+// CP0
+
 
 assign rom_addr_o = pc;
 
@@ -237,6 +259,13 @@ ex u_ex(
     .is_in_delayslot_i(ex_is_in_delayslot_i),
     .link_address_i(ex_link_address_i),
     .inst_i(ex_inst_i),
+    .mem_cp0_reg_we         ( ex_mem_cp0_reg_we_i         ),
+    .mem_cp0_reg_data       ( ex_mem_cp0_reg_data_i       ),
+    .mem_cp0_reg_write_addr ( ex_mem_cp0_reg_write_addr_i ),
+    .wb_cp0_reg_we          ( ex_wb_cp0_reg_we_i          ),
+    .wb_cp0_reg_data        ( ex_wb_cp0_reg_data_i        ),
+    .wb_cp0_reg_write_addr  ( ex_wb_cp0_reg_write_addr_i  ),
+    .cp0_reg_data_i         ( ex_cp0_reg_data_i         ),
 
 
     .wd_o     ( ex_wd_o     ),
@@ -254,7 +283,11 @@ ex u_ex(
     .div_opdata2_o  ( div_opdata2  ),
     .aluop_o(ex_aluop_o),
     .mem_addr_o(ex_mem_addr_o),
-    .reg2_o(ex_reg2_o)
+    .reg2_o(ex_reg2_o),
+    .cp0_reg_we_o           ( ex_cp0_reg_we_o           ),
+    .cp0_reg_write_addr_o   ( ex_cp0_reg_write_addr_o   ),
+    .cp0_reg_read_addr_o    ( ex_cp0_reg_read_addr_o    ),
+    .cp0_reg_data_o         ( ex_cp0_reg_data_o         )
 
 );
 
@@ -274,6 +307,9 @@ ex_mem u_ex_mem(
     .ex_aluop(ex_aluop_o),
     .ex_mem_addr(ex_mem_addr_o),
     .ex_reg2(ex_reg2_o),
+    .ex_cp0_reg_we         ( ex_cp0_reg_we_o         ),
+    .ex_cp0_reg_data       ( ex_cp0_reg_data_o       ),
+    .ex_cp0_reg_write_addr ( ex_cp0_reg_write_addr_o ),
 
     .mem_wd    ( mem_wd_i    ),
     .mem_wdata ( mem_wdata_i ),
@@ -285,7 +321,10 @@ ex_mem u_ex_mem(
 	.cnt_o     (cnt_i),
     .mem_aluop(mem_aluop_i),
     .mem_mem_addr(mem_mem_addr_i),
-    .mem_reg2(mem_reg2_i)
+    .mem_reg2(mem_reg2_i),
+    .mem_cp0_reg_we        ( mem_cp0_reg_we_i        ),
+    .mem_cp0_reg_data      ( mem_cp0_reg_data_i      ),
+    .mem_cp0_reg_write_addr  ( mem_cp0_reg_write_addr_i  )
 );
 
 mem u_mem(
@@ -303,6 +342,9 @@ mem u_mem(
     .LLbit_i(mem_LLbit_i),
     .wb_LLbit_we_i(mem_wb_LLbit_we_i),
     .wb_LLbit_value_i(mem_wb_LLbit_value_i),
+    .cp0_reg_we_i         ( mem_cp0_reg_we_i         ),
+    .cp0_reg_write_addr_i ( mem_cp0_reg_write_addr_i ),
+    .cp0_reg_data_i       ( mem_cp0_reg_data_i       ),
 
     .wd_o    ( mem_wd_o    ),
     .wdata_o ( mem_wdata_o ),
@@ -316,7 +358,10 @@ mem u_mem(
     .mem_data_o(ram_data_o),
     .mem_ce_o(ram_ce_o),
     .LLbit_we_o(mem_LLbit_we_o),
-    .LLbit_value_o(mem_LLbit_value_o)
+    .LLbit_value_o(mem_LLbit_value_o),
+    .cp0_reg_we_o         ( ex_mem_cp0_reg_we_i         ),
+    .cp0_reg_write_addr_o ( ex_mem_cp0_reg_write_addr_i ),
+    .cp0_reg_data_o       ( ex_mem_cp0_reg_data_i       )
 );
 
 mem_wb u_mem_wb(
@@ -331,6 +376,9 @@ mem_wb u_mem_wb(
     .stall     (stall        ),
     .mem_LLbit_we(mem_LLbit_we_o),
     .mem_LLbit_value(mem_LLbit_value_o),
+    .mem_cp0_reg_we         ( ex_mem_cp0_reg_we_i         ),
+    .mem_cp0_reg_data       ( ex_mem_cp0_reg_data_i   ),
+    .mem_cp0_reg_write_addr ( ex_mem_cp0_reg_write_addr_i     ),
 
     .wb_wd     ( wb_wd_i     ),
     .wb_wreg   ( wb_wreg_i   ),
@@ -339,7 +387,10 @@ mem_wb u_mem_wb(
     .wb_hi     ( wb_hi_i     ),
     .wb_lo     ( wb_lo_i     ),
     .wb_LLbit_we(mem_wb_LLbit_we_i),
-    .wb_LLbit_value(mem_wb_LLbit_value_i)
+    .wb_LLbit_value(mem_wb_LLbit_value_i),
+    .wb_cp0_reg_we          ( ex_wb_cp0_reg_we_i          ),
+    .wb_cp0_reg_data        ( ex_wb_cp0_reg_data_i  ),
+    .wb_cp0_reg_write_addr  ( ex_wb_cp0_reg_write_addr_i        )
 );
 
 regfile u_regfile(
@@ -386,6 +437,27 @@ LLbit_reg u_LLbit_reg(
     .LLbit_i ( mem_wb_LLbit_value_i ),
     .LLbit_o  ( mem_LLbit_i  )
 );
+
+cp0_reg u_cp0_reg(
+    .rst       ( rst       ),
+    .clk       ( clk       ),
+    .raddr_i   ( ex_cp0_reg_read_addr_o   ),
+    .int_i     ( int_i     ),
+    .we_i      ( ex_wb_cp0_reg_we_i      ),
+    .waddr_i   ( ex_wb_cp0_reg_write_addr_i   ),
+    .data_i    ( ex_wb_cp0_reg_data_i  ),
+
+    .data_o    ( ex_cp0_reg_data_i    ),
+    //.count_o   ( count_o   ),
+    //.compare_o ( compare_o ),
+    //.status_o  ( status_o  ),
+    //.cause_o   ( cause_o   ),
+    //.epc_o     ( epc_o     ),
+    //.config_o  ( config_o  ),
+    //.prid_o    ( prid_o    ),
+    .timer_int_o  ( timer_int_o  )
+);
+
 
 
 endmodule
