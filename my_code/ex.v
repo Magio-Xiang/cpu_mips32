@@ -26,6 +26,17 @@ module ex (
     input wire[`RegBus] link_address_i,
     input wire[`RegBus] inst_i,
 
+    input wire              mem_cp0_reg_we,
+    input wire[`RegBus]     mem_cp0_reg_data,
+    input wire[`RegAddrBus] mem_cp0_reg_write_addr,
+
+    input wire              wb_cp0_reg_we,
+    input wire[`RegBus]     wb_cp0_reg_data,
+    input wire[`RegAddrBus] wb_cp0_reg_write_addr,
+
+    input wire[`RegBus]     cp0_reg_data_i,
+
+
     output reg whilo_o,
     output reg[`RegBus] hi_o,
     output reg[`RegBus] lo_o,
@@ -43,7 +54,12 @@ module ex (
     output reg[`RegBus] div_opdata2_o,
     output wire[`AluOpBus] aluop_o,
     output wire[`RegBus] mem_addr_o,
-    output wire[`RegBus] reg2_o   
+    output wire[`RegBus] reg2_o   ,
+
+    output reg cp0_reg_we_o,
+    output reg[`RegAddrBus] cp0_reg_write_addr_o,
+    output reg[`RegAddrBus] cp0_reg_read_addr_o,
+    output reg[`RegBus] cp0_reg_data_o
 );
     reg[`RegBus] logicout;
     reg[`RegBus] shiftres;
@@ -304,6 +320,15 @@ module ex (
                 `EXE_MFLO_OP:begin
                     moveres<=LO;
                 end
+                `EXE_MFC0_OP:begin
+                    cp0_reg_read_addr_o<=inst_i[15:11];
+                    moveres<=cp0_reg_data_i;
+                    if (mem_cp0_reg_we == `WriteEnable && mem_cp0_reg_write_addr == inst_i[15:11]) begin
+                        moveres<=mem_cp0_reg_data;
+                    end else if (wb_cp0_reg_we ==`WriteEnable && wb_cp0_reg_write_addr == inst_i[15:11]) begin
+                        moveres<=wb_cp0_reg_data;
+                    end
+                end
                 default:begin
                     
                 end 
@@ -444,6 +469,23 @@ module ex (
     end
 //**********************************************************************//
 
+//************************写CP0寄存器***********************************//
+    always @(*) begin
+        if (rst==`RstEnable) begin
+            cp0_reg_data_o<=`ZeroWord;
+            cp0_reg_we_o<=`WriteDisable;
+            cp0_reg_write_addr_o<=5'b00000;
+        end else if (aluop_i == `EXE_MTC0_OP) begin
+            cp0_reg_data_o<=reg1_i;
+            cp0_reg_we_o<=`WriteEnable;
+            cp0_reg_write_addr_o<=inst_i[15:11];
+        end else begin
+            cp0_reg_data_o<=`ZeroWord;
+            cp0_reg_we_o<=`WriteDisable;
+            cp0_reg_write_addr_o<=5'b00000;
+        end
+    end
+//**********************************************************************//
 
 //HI、LO寄存器数据读取，解决数据相关问题
     always @(*) begin
