@@ -35,7 +35,8 @@ module ex (
     input wire[`RegAddrBus] wb_cp0_reg_write_addr,
 
     input wire[`RegBus]     cp0_reg_data_i,
-
+    input wire[31:0] excepttype_i,
+    input wire[`RegBus] current_inst_address_i,
 
     output reg whilo_o,
     output reg[`RegBus] hi_o,
@@ -44,6 +45,7 @@ module ex (
     output reg[`RegAddrBus] wd_o,
     output reg wreg_o,
     output reg[`RegBus] wdata_o,
+    
     
     output reg		stallreq,
     output reg [1:0] cnt_o,
@@ -59,7 +61,10 @@ module ex (
     output reg cp0_reg_we_o,
     output reg[`RegAddrBus] cp0_reg_write_addr_o,
     output reg[`RegAddrBus] cp0_reg_read_addr_o,
-    output reg[`RegBus] cp0_reg_data_o
+    output reg[`RegBus] cp0_reg_data_o,
+    output wire[31:0] excepttype_o,
+    output wire[`RegBus] current_inst_address_o,
+    output wire is_in_delayslot_o
 );
     reg[`RegBus] logicout;
     reg[`RegBus] shiftres;
@@ -68,6 +73,9 @@ module ex (
     reg[`RegBus] LO;
     reg[`RegBus] arithmeticres;
     reg[`DoubleRegBus] mulres;
+
+    reg trapassert;
+    reg ovassert;
 
     wire ov_sum;        //保存溢出情况
     wire reg1_eq_reg2;  
@@ -81,6 +89,14 @@ module ex (
     reg[`DoubleRegBus] hilo_temp1;
     reg stallreq_for_madd_msub;
     reg stallreq_for_div;
+
+        
+    //***************************异常处理数据准备***************************************//
+    assign excepttype_o = {excepttype_i[31:12],ovassert,trapassert,excepttype_i[9:8],8'h00};
+    assign is_in_delayslot_o = is_in_delayslot_i;
+    assign current_inst_address_o= current_inst_address_i;
+
+    //*********************************************************************************//
     //***************************访存阶段数据准备***************************************//
     assign aluop_o=aluop_i;
     assign mem_addr_o= reg1_i+{{16{inst_i[15]}},inst_i[15:0]};
@@ -92,13 +108,18 @@ module ex (
     //计算操作数准备
     assign reg2_i_mux = ((aluop_i==`EXE_SUB_OP)||
                         (aluop_i==`EXE_SUBU_OP)||
-                        (aluop_i==`EXE_SLT_OP))?
-                            (~reg2_i)+1:reg2_i;
+                        (aluop_i==`EXE_SLT_OP)||
+                        (aluop_i==`EXE_TLT_OP)||
+                        (aluop_i==`EXE_TLTI_OP)||
+                        (aluop_i==`EXE_TGE_OP)||
+                        (aluop_i==`EXE_TGEI_OP))?(~reg2_i)+1:reg2_i;
     assign result_sum = reg1_i + reg2_i_mux;
     assign ov_sum = ((reg1_i[31])&&(reg2_i_mux[31])&&(~result_sum[31]))||
                     ((~reg1_i[31])&&(~reg2_i_mux[31])&&(result_sum[31]));
 
-    assign reg1_lt_reg2 = (aluop_i==`EXE_SLT)?
+    assign reg1_lt_reg2 = ((aluop_i == `EXE_SLT_OP) || (aluop_i == `EXE_TLT_OP) ||
+	                       (aluop_i == `EXE_TLTI_OP) || (aluop_i == `EXE_TGE_OP) ||
+	                       (aluop_i == `EXE_TGEI_OP)) ?
                         (((reg1_i[31])&&(~reg2_i_mux[31]))||
                          (!reg1_i[31] && !reg2_i[31] && result_sum[31])||
 			                   (reg1_i[31] && reg2_i[31] && result_sum[31]))
@@ -392,8 +413,10 @@ module ex (
         wd_o<=wd_i;
         if (((aluop_i==`EXE_SUB_OP)||(aluop_i==`EXE_ADD_OP)||(aluop_i==`EXE_ADDI_OP))&&(ov_sum==1'b1)) begin
             wreg_o<=`WriteDisable;
+            ovassert<=1'b1;
         end else begin
             wreg_o<=wreg_i;
+            ovassert<=1'b0;
         end
         case (alusel_i)
             `EXE_RES_LOGIC:begin
@@ -509,4 +532,39 @@ module ex (
         stallreq = stallreq_for_madd_msub || stallreq_for_div;    
     end
 
+
+//************************判断是否发生自陷异常***********************************//
+    always @(*) begin
+        if (rst== `RstEnable) begin
+            trapassert <=`TrapNotAssert;
+        end else begin
+            trapassert <=`TrapNotAssert;
+            case (aluop_i)
+                `EXE_TEQ,`EXE_TEQI:begin
+                    if (reg1_i==reg2_i) begin
+                        trapassert<=`TrapAssert;
+                    end
+                end 
+                `EXE_TGE_OP,`EXE_TGEI_OP,`EXE_TGEIU_OP,`EXE_TGEU_OP:begin
+                    if (~reg1_lt_reg2) begin
+                        trapassert<=`TrapAssert;
+                    end
+                end 
+                `EXE_TLT_OP,`EXE_TLTI_OP,`EXE_TLTIU_OP,`EXE_TLTU_OP:begin
+                    if (reg1_lt_reg2) begin
+                        trapassert<=`TrapAssert;
+                    end
+                end
+                `EXE_TNE_OP,`EXE_TNEI_OP:begin
+                    if (reg1_i!=reg2_i) begin
+                        trapassert<=`TrapAssert;
+                    end
+                end 
+                default: begin
+                    trapassert<=`TrapNotAssert;
+                end
+            endcase
+        end
+    end
+//**********************************************************************//
 endmodule
