@@ -5,6 +5,8 @@ module pc_reg (
     input wire[5:0] stall,
     input wire branch_flag_i,
     input wire[`RegBus] branch_target_address_i,
+    input wire flush,
+    input wire[`RegBus] new_pc,
 
     output reg[`InstAddrBus] pc,
     output reg ce 
@@ -24,6 +26,9 @@ module pc_reg (
         if(ce == `ChipDisable)
         begin
             pc<=`ZeroWord;
+        end
+        else if (flush == 1'b1) begin
+            pc<=new_pc;
         end
         else if(stall[0]==`NoStop)
         begin
