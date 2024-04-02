@@ -24,7 +24,7 @@ module mem (
 
     input wire[31:0] excepttype_i,
     input wire is_in_delayslot_i,
-    input wire[`RegBus] current_inst_address_i,
+    input wire[`RegBus] current_inst_addr_i,
 
     input wire[`RegBus] cp0_status_i,
     input wire[`RegBus] cp0_cause_i,
@@ -54,11 +54,11 @@ module mem (
     output reg[`RegAddrBus] cp0_reg_write_addr_o,
     output reg[`RegBus] cp0_reg_data_o,
 
-    output reg[3:0] excepttype_o,
+    output reg[31:0] excepttype_o,
     output wire[`RegBus] cp0_epc_o,
     output wire is_in_delayslot_o,
 
-    output wire[`RegBus] current_inst_address_o	
+    output wire[`RegBus] current_inst_addr_o	
 );
     reg LLbit;
 
@@ -72,8 +72,9 @@ module mem (
     assign mem_we_o=mem_we;
     assign zero32 = `ZeroWord;
     assign is_in_delayslot_o=is_in_delayslot_i;
-    assign current_inst_address_o=current_inst_address_i;
+    assign current_inst_addr_o=current_inst_addr_i;
     assign mem_we_o = mem_we & (~(|excepttype_o));
+    assign cp0_epc_o = cp0_epc;
 
     always @(*) begin
         if (rst==`RstEnable) begin
@@ -128,7 +129,7 @@ module mem (
 		end else begin
 			excepttype_o <= `ZeroWord;
 			
-			if(current_inst_address_i != `ZeroWord) begin
+			if(current_inst_addr_i != `ZeroWord) begin
 				if(((cp0_cause[15:8] & (cp0_status[15:8])) != 8'h00) && (cp0_status[1] == 1'b0) && 
 							(cp0_status[0] == 1'b1)) begin
 					excepttype_o <= 32'h00000001;        //interrupt
