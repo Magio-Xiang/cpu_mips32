@@ -444,6 +444,35 @@
     | LLbit_i     | 1           |Input            |要写到LLbit寄存器的值                 | 
     | LLbit_o     |1            |Output           |LLbit寄存器的值        | 
 
+
+## Chapter10 协处理器访问指令的实现
+- MIPS32提供至多四个协处理器，分别为CP0~CP3，CP0用作系统控制，CP1、CP3用作浮点处理，CP2用于特定实现，此次仅实现CP0；
+- CP0：配置工作CPU工作状态、异常控制等，此处实现以下寄存器（32bit）：
+    - count：计数器
+    - compare：与count一同完成定时中断
+    - status：控制操作模式、中断使能等
+    - cause：记录异常发生原因
+    - epc：存储异常返回地址
+    - prid：处理器标志（Processor Identifier）
+    - config：配置功能信息
+- 指令：mtc0、mfc0，读写CP0；流程与通用寄存器相似，注意数据前推
+
+## Chapter11 异常相关指令的实现
+- 精准异常：异常发生时，有一个被异常打断的指令，成为异常受害者（Exception Victim），该指令前的所有指令正常执行，之后的指令取消。为了实现精准异常，异常处理的顺序需要与指令顺序相同。对于使用流水线的处理器，需要在流水器的特定阶段处理异常，来实现精准异常。本处理器在访存阶段统一处理异常。
+- 此处实现异常包括：
+    - reset：硬件复位
+    - interrupt：6个外部硬件中断、2个软件中断
+    - syscall：系统调用指令
+    - ri：无效指令
+    - ov：算术指令溢出
+    - tr：自陷指令
+- 各异常判断时间：
+    - 译码：syscall，eret，ri
+    - 执行：trap，ova
+    - 访存：interrupt
+
+
+
 ## OpenMIPS指令及机器码 
 ![OpenMIPS指令及机器码](/pic/OpenMPIS_INST.jpg "OpenMIPS指令及机器码") 
 
