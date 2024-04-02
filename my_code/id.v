@@ -35,13 +35,13 @@ module id (
     output wire stallreq,
 
     output reg branch_flag_o,
-    output reg[`RegBus] branch_target_address_o,
+    output reg[`RegBus] branch_target_addr_o,
     output reg is_in_delayslot_o,
     output reg[`RegBus] link_addr_o,
     output reg next_inst_in_delayslot_o,
     output wire[`RegBus] inst_o,
     output wire[31:0] excepttype_o,
-    output wire[`RegBus] current_inst_address_o
+    output wire[`RegBus] current_inst_addr_o
 
 );
 
@@ -77,7 +77,7 @@ assign pre_inst_is_load =((ex_aluop_i==`EXE_LB_OP)||
                             (ex_aluop_i==`EXE_LL_OP)||
                             (ex_aluop_i==`EXE_SC_OP)) ? 1'b1:1'b0;
 assign excepttype_o = {19'b0,excepttype_is_eret,2'b0,instvalid,excepttype_is_syscall,8'b0};
-assign current_inst_address_o = pc_i;
+assign current_inst_addr_o = pc_i;
 
 
 always @(*) begin
@@ -93,7 +93,7 @@ always @(*) begin
         reg2_read_o <= 1'b0;
         imm <= 32'h0;
         link_addr_o<=`ZeroWord;
-        branch_target_address_o<=`ZeroWord;
+        branch_target_addr_o<=`ZeroWord;
         branch_flag_o<=`NotBranch;
         next_inst_in_delayslot_o<=`NotInDelaySlot;
         excepttype_is_eret=`False_v;
@@ -111,7 +111,7 @@ always @(*) begin
         reg2_read_o <= 1'b0;
         imm <= 32'h0;
         link_addr_o<=`ZeroWord;
-        branch_target_address_o<=`ZeroWord;
+        branch_target_addr_o<=`ZeroWord;
         branch_flag_o<=`NotBranch;
         next_inst_in_delayslot_o<=`NotInDelaySlot;
         excepttype_is_eret=`False_v;
@@ -324,7 +324,7 @@ always @(*) begin
                                 wreg_o<=`WriteDisable;
                                 instvalid<=`InstValid;
                                 link_addr_o<=`ZeroWord;
-                                branch_target_address_o<=reg1_o;
+                                branch_target_addr_o<=reg1_o;
                                 branch_flag_o<=`Branch;
                                 next_inst_in_delayslot_o<=`InDelaySlot;
                             end
@@ -336,7 +336,7 @@ always @(*) begin
                                 wreg_o<=`WriteEnable;
                                 instvalid<=`InstValid;
                                 link_addr_o<=pc_plus_8;
-                                branch_target_address_o<=reg1_o;
+                                branch_target_addr_o<=reg1_o;
                                 branch_flag_o<=`Branch;
                                 next_inst_in_delayslot_o<=`InDelaySlot;
                             end
@@ -571,7 +571,7 @@ always @(*) begin
                 wreg_o<=`WriteDisable;
                 instvalid<=`InstValid;
                 link_addr_o<=`ZeroWord;
-                branch_target_address_o<={pc_plus_4[31:28],inst_i[25:0],2'b00};
+                branch_target_addr_o<={pc_plus_4[31:28],inst_i[25:0],2'b00};
                 branch_flag_o<=`Branch;
                 next_inst_in_delayslot_o<=`InDelaySlot;
             end
@@ -584,7 +584,7 @@ always @(*) begin
                 wd_o<=5'b11111;
                 instvalid<=`InstValid;
                 link_addr_o<=pc_plus_8;
-                branch_target_address_o<={pc_plus_4[31:28],inst_i[25:0],2'b00};
+                branch_target_addr_o<={pc_plus_4[31:28],inst_i[25:0],2'b00};
                 branch_flag_o<=`Branch;
                 next_inst_in_delayslot_o<=`InDelaySlot;
             end
@@ -597,7 +597,7 @@ always @(*) begin
                 instvalid<=`InstValid;
                 link_addr_o<=`ZeroWord;
                 if (reg1_o==reg2_o) begin
-                    branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                    branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                     branch_flag_o<=`Branch;
                     next_inst_in_delayslot_o<=`InDelaySlot;
                 end
@@ -611,7 +611,7 @@ always @(*) begin
                 instvalid<=`InstValid;
                 link_addr_o<=`ZeroWord;
                 if ((reg1_o[31]==1'b0 )&&(reg1_o!=`ZeroWord) ) begin
-                    branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                    branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                     branch_flag_o<=`Branch;
                     next_inst_in_delayslot_o<=`InDelaySlot;
                 end
@@ -625,7 +625,7 @@ always @(*) begin
                 instvalid<=`InstValid;
                 link_addr_o<=`ZeroWord;
                 if ((reg1_o[31]==1'b1 )||(reg1_o==`ZeroWord) ) begin
-                    branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                    branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                     branch_flag_o<=`Branch;
                     next_inst_in_delayslot_o<=`InDelaySlot;
                 end
@@ -639,7 +639,7 @@ always @(*) begin
                 instvalid<=`InstValid;
                 link_addr_o<=`ZeroWord;
                 if (reg1_o!=reg2_o) begin
-                    branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                    branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                     branch_flag_o<=`Branch;
                     next_inst_in_delayslot_o<=`InDelaySlot;
                 end
@@ -655,7 +655,7 @@ always @(*) begin
                         instvalid<=`InstValid;
                         link_addr_o<=`ZeroWord;
                         if (reg1_o[31]==1'b1 ) begin
-                            branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                            branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                             branch_flag_o<=`Branch;
                             next_inst_in_delayslot_o<=`InDelaySlot;
                         end
@@ -670,7 +670,7 @@ always @(*) begin
                         instvalid<=`InstValid;
                         link_addr_o<=pc_plus_8;
                         if (reg1_o[31]==1'b1 ) begin
-                            branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                            branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                             branch_flag_o<=`Branch;
                             next_inst_in_delayslot_o<=`InDelaySlot;
                         end
@@ -684,7 +684,7 @@ always @(*) begin
                         instvalid<=`InstValid;
                         link_addr_o<=`ZeroWord;
                         if (reg1_o[31]==1'b0 ) begin
-                            branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                            branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                             branch_flag_o<=`Branch;
                             next_inst_in_delayslot_o<=`InDelaySlot;
                         end
@@ -699,7 +699,7 @@ always @(*) begin
                         instvalid<=`InstValid;
                         link_addr_o<=pc_plus_8;
                         if (reg1_o[31]==1'b0 ) begin
-                            branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                            branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                             branch_flag_o<=`Branch;
                             next_inst_in_delayslot_o<=`InDelaySlot;
                         end
