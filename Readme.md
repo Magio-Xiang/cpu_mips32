@@ -1,6 +1,7 @@
 # OpenMIPS 学习
 
-
+## 实现功能
+    完成基于MIPS32 R1指令架构的基础处理器实现，能实现pic/OpenMPIS_INST.jpg中所有指令和部分异常处理。
 ## 文件说明
 - cpucode：书籍配套光盘资料
 - my_code: 手撕代码
