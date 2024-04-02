@@ -23,7 +23,7 @@ module ex (
     input wire div_ready_i,
 
     input wire is_in_delayslot_i,
-    input wire[`RegBus] link_address_i,
+    input wire[`RegBus] link_addr_i,
     input wire[`RegBus] inst_i,
 
     input wire              mem_cp0_reg_we,
@@ -36,7 +36,7 @@ module ex (
 
     input wire[`RegBus]     cp0_reg_data_i,
     input wire[31:0] excepttype_i,
-    input wire[`RegBus] current_inst_address_i,
+    input wire[`RegBus] current_inst_addr_i,
 
     output reg whilo_o,
     output reg[`RegBus] hi_o,
@@ -63,7 +63,7 @@ module ex (
     output reg[`RegAddrBus] cp0_reg_read_addr_o,
     output reg[`RegBus] cp0_reg_data_o,
     output wire[31:0] excepttype_o,
-    output wire[`RegBus] current_inst_address_o,
+    output wire[`RegBus] current_inst_addr_o,
     output wire is_in_delayslot_o
 );
     reg[`RegBus] logicout;
@@ -94,7 +94,7 @@ module ex (
     //***************************异常处理数据准备***************************************//
     assign excepttype_o = {excepttype_i[31:12],ovassert,trapassert,excepttype_i[9:8],8'h00};
     assign is_in_delayslot_o = is_in_delayslot_i;
-    assign current_inst_address_o= current_inst_address_i;
+    assign current_inst_addr_o= current_inst_addr_i;
 
     //*********************************************************************************//
     //***************************访存阶段数据准备***************************************//
@@ -435,7 +435,7 @@ module ex (
                 wdata_o<=mulres[31:0];
             end
             `EXE_RES_JUMP_BRANCH:begin
-                wdata_o<=link_address_i;
+                wdata_o<=link_addr_i;
             end
             default: begin
                 wdata_o<=`ZeroWord;
@@ -540,7 +540,7 @@ module ex (
         end else begin
             trapassert <=`TrapNotAssert;
             case (aluop_i)
-                `EXE_TEQ,`EXE_TEQI:begin
+                `EXE_TEQ_OP,`EXE_TEQI_OP:begin
                     if (reg1_i==reg2_i) begin
                         trapassert<=`TrapAssert;
                     end
