@@ -35,11 +35,13 @@ module id (
     output wire stallreq,
 
     output reg branch_flag_o,
-    output reg[`RegBus] branch_target_address_o,
+    output reg[`RegBus] branch_target_addr_o,
     output reg is_in_delayslot_o,
     output reg[`RegBus] link_addr_o,
     output reg next_inst_in_delayslot_o,
-    output wire[`RegBus] inst_o
+    output wire[`RegBus] inst_o,
+    output wire[31:0] excepttype_o,
+    output wire[`RegBus] current_inst_addr_o
 
 );
 
@@ -57,6 +59,9 @@ reg instvalid;
 reg stallreq_for_reg1_loadrelate;
 reg stallreq_for_reg2_loadrelate;
 
+reg excepttype_is_syscall;
+reg excepttype_is_eret;
+
 assign stallreq = stallreq_for_reg1_loadrelate||stallreq_for_reg2_loadrelate;
 assign pc_plus_8 = pc_i + 8;
 assign pc_plus_4 = pc_i + 4;
@@ -71,7 +76,8 @@ assign pre_inst_is_load =((ex_aluop_i==`EXE_LB_OP)||
                             (ex_aluop_i==`EXE_LWL_OP)||
                             (ex_aluop_i==`EXE_LL_OP)||
                             (ex_aluop_i==`EXE_SC_OP)) ? 1'b1:1'b0;
-
+assign excepttype_o = {19'b0,excepttype_is_eret,2'b0,instvalid,excepttype_is_syscall,8'b0};
+assign current_inst_addr_o = pc_i;
 
 
 always @(*) begin
@@ -87,9 +93,11 @@ always @(*) begin
         reg2_read_o <= 1'b0;
         imm <= 32'h0;
         link_addr_o<=`ZeroWord;
-        branch_target_address_o<=`ZeroWord;
+        branch_target_addr_o<=`ZeroWord;
         branch_flag_o<=`NotBranch;
         next_inst_in_delayslot_o<=`NotInDelaySlot;
+        excepttype_is_eret=`False_v;
+        excepttype_is_syscall=`False_v;
     end
     else begin
         aluop_o <= `EXE_NOP_OP;
@@ -103,9 +111,11 @@ always @(*) begin
         reg2_read_o <= 1'b0;
         imm <= 32'h0;
         link_addr_o<=`ZeroWord;
-        branch_target_address_o<=`ZeroWord;
+        branch_target_addr_o<=`ZeroWord;
         branch_flag_o<=`NotBranch;
         next_inst_in_delayslot_o<=`NotInDelaySlot;
+        excepttype_is_eret=`False_v;
+        excepttype_is_syscall=`False_v;
         //default rd<=rs*rt
         case (op)
             `EXE_SPECIAL_INST:begin
@@ -314,7 +324,7 @@ always @(*) begin
                                 wreg_o<=`WriteDisable;
                                 instvalid<=`InstValid;
                                 link_addr_o<=`ZeroWord;
-                                branch_target_address_o<=reg1_o;
+                                branch_target_addr_o<=reg1_o;
                                 branch_flag_o<=`Branch;
                                 next_inst_in_delayslot_o<=`InDelaySlot;
                             end
@@ -326,7 +336,7 @@ always @(*) begin
                                 wreg_o<=`WriteEnable;
                                 instvalid<=`InstValid;
                                 link_addr_o<=pc_plus_8;
-                                branch_target_address_o<=reg1_o;
+                                branch_target_addr_o<=reg1_o;
                                 branch_flag_o<=`Branch;
                                 next_inst_in_delayslot_o<=`InDelaySlot;
                             end
@@ -337,6 +347,69 @@ always @(*) begin
                     default:begin
                         
                     end 
+                endcase
+
+                case (op3)
+                    `EXE_TEQ:begin
+                        aluop_o<=`EXE_TEQ_OP;
+                        alusel_o<=`EXE_RES_NOP;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadEnable;
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
+                    `EXE_TGE:begin
+                        aluop_o<=`EXE_TGE_OP;
+                        alusel_o<=`EXE_RES_NOP;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadEnable;
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
+                    `EXE_TGEU:begin
+                        aluop_o<=`EXE_TGEU_OP;
+                        alusel_o<=`EXE_RES_NOP;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadEnable;
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
+                    `EXE_TLT:begin
+                        aluop_o<=`EXE_TLT_OP;
+                        alusel_o<=`EXE_RES_NOP;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadEnable;
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
+                    `EXE_TLTU:begin
+                        aluop_o<=`EXE_TLTU_OP;
+                        alusel_o<=`EXE_RES_NOP;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadEnable;
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
+                    `EXE_TNE:begin
+                        aluop_o<=`EXE_TNE_OP;
+                        alusel_o<=`EXE_RES_NOP;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadEnable;
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
+                    `EXE_SYSCALL:begin
+                        aluop_o<=`EXE_SYSCALL_OP;
+                        alusel_o<=`EXE_RES_NOP;
+                        reg1_read_o<=`ReadDisable;
+                        reg2_read_o<=`ReadDisable;
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                        excepttype_is_syscall<=`True_v;
+                    end 
+                    default: begin
+                      
+                    end
                 endcase
             end
             `EXE_SPECIAL2_INST:begin
@@ -498,7 +571,7 @@ always @(*) begin
                 wreg_o<=`WriteDisable;
                 instvalid<=`InstValid;
                 link_addr_o<=`ZeroWord;
-                branch_target_address_o<={pc_plus_4[31:28],inst_i[25:0],2'b00};
+                branch_target_addr_o<={pc_plus_4[31:28],inst_i[25:0],2'b00};
                 branch_flag_o<=`Branch;
                 next_inst_in_delayslot_o<=`InDelaySlot;
             end
@@ -511,7 +584,7 @@ always @(*) begin
                 wd_o<=5'b11111;
                 instvalid<=`InstValid;
                 link_addr_o<=pc_plus_8;
-                branch_target_address_o<={pc_plus_4[31:28],inst_i[25:0],2'b00};
+                branch_target_addr_o<={pc_plus_4[31:28],inst_i[25:0],2'b00};
                 branch_flag_o<=`Branch;
                 next_inst_in_delayslot_o<=`InDelaySlot;
             end
@@ -524,7 +597,7 @@ always @(*) begin
                 instvalid<=`InstValid;
                 link_addr_o<=`ZeroWord;
                 if (reg1_o==reg2_o) begin
-                    branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                    branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                     branch_flag_o<=`Branch;
                     next_inst_in_delayslot_o<=`InDelaySlot;
                 end
@@ -538,7 +611,7 @@ always @(*) begin
                 instvalid<=`InstValid;
                 link_addr_o<=`ZeroWord;
                 if ((reg1_o[31]==1'b0 )&&(reg1_o!=`ZeroWord) ) begin
-                    branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                    branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                     branch_flag_o<=`Branch;
                     next_inst_in_delayslot_o<=`InDelaySlot;
                 end
@@ -552,7 +625,7 @@ always @(*) begin
                 instvalid<=`InstValid;
                 link_addr_o<=`ZeroWord;
                 if ((reg1_o[31]==1'b1 )||(reg1_o==`ZeroWord) ) begin
-                    branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                    branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                     branch_flag_o<=`Branch;
                     next_inst_in_delayslot_o<=`InDelaySlot;
                 end
@@ -566,7 +639,7 @@ always @(*) begin
                 instvalid<=`InstValid;
                 link_addr_o<=`ZeroWord;
                 if (reg1_o!=reg2_o) begin
-                    branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                    branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                     branch_flag_o<=`Branch;
                     next_inst_in_delayslot_o<=`InDelaySlot;
                 end
@@ -582,7 +655,7 @@ always @(*) begin
                         instvalid<=`InstValid;
                         link_addr_o<=`ZeroWord;
                         if (reg1_o[31]==1'b1 ) begin
-                            branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                            branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                             branch_flag_o<=`Branch;
                             next_inst_in_delayslot_o<=`InDelaySlot;
                         end
@@ -597,7 +670,7 @@ always @(*) begin
                         instvalid<=`InstValid;
                         link_addr_o<=pc_plus_8;
                         if (reg1_o[31]==1'b1 ) begin
-                            branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                            branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                             branch_flag_o<=`Branch;
                             next_inst_in_delayslot_o<=`InDelaySlot;
                         end
@@ -611,7 +684,7 @@ always @(*) begin
                         instvalid<=`InstValid;
                         link_addr_o<=`ZeroWord;
                         if (reg1_o[31]==1'b0 ) begin
-                            branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                            branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                             branch_flag_o<=`Branch;
                             next_inst_in_delayslot_o<=`InDelaySlot;
                         end
@@ -626,11 +699,65 @@ always @(*) begin
                         instvalid<=`InstValid;
                         link_addr_o<=pc_plus_8;
                         if (reg1_o[31]==1'b0 ) begin
-                            branch_target_address_o<=imm_sll2_signedext+pc_plus_4;
+                            branch_target_addr_o<=imm_sll2_signedext+pc_plus_4;
                             branch_flag_o<=`Branch;
                             next_inst_in_delayslot_o<=`InDelaySlot;
                         end
                     end 
+                    `EXE_TEQI:begin
+                        aluop_o<=`EXE_TEQI_OP;
+                        alusel_o<=`EXE_RES_NOP;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadDisable;
+                        imm<={{16{inst_i[15]}},inst_i[15:0]};
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
+                    `EXE_TGEI:begin
+                        aluop_o<=`EXE_TGEI_OP;
+                        alusel_o<=`EXE_RES_NOP;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadDisable;
+                        imm<={{16{inst_i[15]}},inst_i[15:0]};
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
+                    `EXE_TGEIU:begin
+                        aluop_o<=`EXE_TGEIU_OP;
+                        alusel_o<=`EXE_RES_NOP;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadDisable;
+                        imm<={{16{inst_i[15]}},inst_i[15:0]};
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
+                    `EXE_TLTI:begin
+                        aluop_o<=`EXE_TLTI_OP;
+                        alusel_o<=`EXE_RES_NOP;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadDisable;
+                        imm<={{16{inst_i[15]}},inst_i[15:0]};
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
+                    `EXE_TLTIU:begin
+                        aluop_o<=`EXE_TLTIU_OP;
+                        alusel_o<=`EXE_RES_NOP;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadDisable;
+                        imm<={{16{inst_i[15]}},inst_i[15:0]};
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
+                    `EXE_TNEI:begin
+                        aluop_o<=`EXE_TNEI_OP;
+                        alusel_o<=`EXE_RES_NOP;
+                        reg1_read_o<=`ReadEnable;
+                        reg2_read_o<=`ReadDisable;
+                        imm<={{16{inst_i[15]}},inst_i[15:0]};
+                        wreg_o<=`WriteDisable;
+                        instvalid<=`InstValid;
+                    end
                     default:begin
                       
                     end 
@@ -797,6 +924,34 @@ always @(*) begin
                     
                 end 
             endcase    
+        end
+        if (inst_i[31:21] == 11'b0100_0000_000 &&
+            inst_i[10:0]  == 11'b0000_0000_000) begin
+            aluop_o<=`EXE_MFC0_OP;
+            alusel_o<=`EXE_RES_MOVE;
+            reg1_read_o<=`ReadDisable;
+            reg2_read_o<=`ReadDisable;
+            wreg_o<=`WriteEnable;
+            wd_o<=inst_i[20:16];
+            instvalid<=`InstValid;
+        end else if (inst_i[31:21] == 11'b0100_0000_100 &&
+                    inst_i[10:0]  == 11'b0000_0000_000) begin
+            aluop_o<=`EXE_MTC0_OP;
+            alusel_o<=`EXE_RES_NOP;
+            reg1_read_o<=`ReadEnable;
+            reg1_addr_o<=inst_i[20:16];
+            reg2_read_o<=`ReadDisable;
+            wreg_o<=`WriteDisable;
+            instvalid<=`InstValid;
+        end
+        if (inst_i == `EXE_ERET) begin
+            aluop_o<=`EXE_ERET_OP;
+            alusel_o<=`EXE_RES_NOP;
+            reg1_read_o<=`ReadDisable;
+            reg2_read_o<=`ReadDisable;
+            wreg_o<=`WriteDisable;
+            instvalid<=`InstValid;
+            excepttype_is_eret<=`True_v;
         end
     end
 end
